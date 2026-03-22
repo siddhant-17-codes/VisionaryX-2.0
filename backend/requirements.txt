@@ -1,0 +1,23 @@
+numpy==2.2.4
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+python-dotenv==1.0.1
+pydantic==2.10.6
+pydantic-settings==2.7.1
+
+# Gemini + LangChain
+google-generativeai==0.8.3
+langchain==0.3.21
+langchain-google-genai==2.0.10
+langchain-community==0.3.20
+
+# RAG / Vector store
+faiss-cpu==1.9.0.post1
+pypdf==4.1.0
+
+# Image generation
+huggingface_hub==0.29.3
+Pillow==11.1.0
+requests==2.31.0
+python-docx==1.1.2
