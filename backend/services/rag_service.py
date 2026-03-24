@@ -8,6 +8,20 @@ from models.schemas import ChatMessage, Citation, PDFQueryResponse
 logger = setup_logger("visionaryx.rag")
 
 
+def _adaptive_threshold(scores: list[float]) -> float:
+    """
+    Compute an adaptive relevance threshold based on score distribution.
+    FAISS L2 distances: lower = more similar.
+    Strategy: accept chunks within 40% above the best (lowest) score.
+    Falls back to a generous absolute cap of 2.0 if best score is very low.
+    """
+    if not scores:
+        return 2.0
+    best = min(scores)
+    threshold = best * 1.4
+    return min(threshold, 2.0)
+
+
 def process_files(session_id: str, files: list[tuple[bytes, str]]) -> list[str]:
     try:
         logger.info(f"Processing {len(files)} file(s) for session={session_id}")
@@ -35,16 +49,26 @@ def query_documents(
         raise SessionNotFoundError(session_id)
 
     store = load_vector_store(session_id)
-    docs = store.similarity_search_with_score(question, k=4)
+    docs = store.similarity_search_with_score(question, k=5)
     logger.debug(f"Retrieved {len(docs)} chunks from FAISS")
+
+    if not docs:
+        return PDFQueryResponse(
+            answer="No relevant content found in the uploaded documents.",
+            citations=[],
+        )
+
+    scores = [score for _, score in docs]
+    threshold = _adaptive_threshold(scores)
+    logger.info(f"Adaptive threshold: {round(threshold, 3)} | best score: {round(min(scores), 3)}")
 
     context_parts = []
     citations: list[Citation] = []
     seen_pages = set()
 
     for doc, score in docs:
-        logger.debug(f"Chunk score={round(score, 3)} | page={doc.metadata.get('page')}")
-        if score < 1.5:
+        logger.debug(f"Chunk score={round(score, 3)} | page={doc.metadata.get('page')} | accepted={score <= threshold}")
+        if score <= threshold:
             context_parts.append(doc.page_content)
             page = doc.metadata.get("page", 0)
             if page not in seen_pages:
@@ -53,7 +77,16 @@ def query_documents(
                     Citation(page=page, chunk=doc.page_content[:200] + "...")
                 )
 
-    logger.info(f"Answering with {len(context_parts)} relevant chunks | {len(citations)} citations")
+    if not context_parts:
+        logger.warning("All chunks filtered out — falling back to top 2")
+        for doc, score in docs[:2]:
+            context_parts.append(doc.page_content)
+            page = doc.metadata.get("page", 0)
+            if page not in seen_pages:
+                seen_pages.add(page)
+                citations.append(Citation(page=page, chunk=doc.page_content[:200] + "..."))
+
+    logger.info(f"Answering with {len(context_parts)} chunks | {len(citations)} citations")
     context = "\n\n---\n\n".join(context_parts)
     answer = query_with_context(question, context, history)
 

@@ -12,7 +12,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Toaster
         position="top-right"
         toastOptions={{
-          style: { background: "#1e1c2a", color: "#fff", border: "1px solid #272535" },
+          style: {
+            background: "#0D0B16",
+            color: "#FCF5EF",
+            border: "1px solid #1C1628",
+            fontSize: "13px",
+          },
+          success: { iconTheme: { primary: "#FE7235", secondary: "#FCF5EF" } },
+          error: { iconTheme: { primary: "#f87171", secondary: "#FCF5EF" } },
         }}
       />
     </BrowserRouter>

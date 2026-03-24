@@ -3,23 +3,119 @@
 @tailwind utilities;
 
 @layer base {
-  body { @apply bg-surface-900 text-white antialiased; }
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-surface-800; }
-  ::-webkit-scrollbar-thumb { @apply bg-surface-600 rounded-full; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: #08060E;
+    color: #FCF5EF;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1C1628; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2A2040; }
+
+  * { box-sizing: border-box; }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-brand-600 hover:bg-brand-400 text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-primary text-linen font-bold text-sm px-6 py-3 rounded-lg
+           hover:bg-orange-500 active:scale-95 transition-all duration-150
+           disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer border-none;
   }
+
   .btn-ghost {
-    @apply text-gray-400 hover:text-white hover:bg-surface-700 px-4 py-2 rounded-lg transition-colors duration-200;
+    @apply bg-transparent text-cyan border border-[#1C3A4A] font-medium text-sm
+           px-6 py-3 rounded-lg hover:bg-[#061418] active:scale-95
+           transition-all duration-150 cursor-pointer;
   }
+
+  .btn-icon {
+    @apply bg-transparent border-none text-muted hover:text-linen
+           transition-colors duration-150 cursor-pointer p-1.5 rounded-md
+           hover:bg-surface;
+  }
+
   .card {
-    @apply bg-surface-800 border border-surface-600 rounded-xl p-4;
+    @apply bg-surface border border-border rounded-xl p-5;
   }
+
   .input-field {
-    @apply bg-surface-700 border border-surface-600 text-white placeholder-gray-500 rounded-lg px-4 py-2 w-full focus:outline-none focus:border-brand-400 transition-colors;
+    @apply bg-base border border-border text-linen placeholder-dim
+           rounded-lg px-4 py-2.5 w-full text-sm outline-none
+           focus:border-primary transition-colors duration-150
+           font-sans;
+  }
+
+  .textarea-field {
+    @apply bg-base border border-border text-linen placeholder-dim
+           rounded-lg px-4 py-3 w-full text-sm outline-none resize-none
+           focus:border-primary transition-colors duration-150
+           font-sans;
+  }
+
+  .badge-blue {
+    @apply bg-[#061418] text-cyan border border-[#0A2A30]
+           text-[9px] font-bold px-2 py-0.5 rounded tracking-wider uppercase;
+  }
+
+  .badge-orange {
+    @apply bg-[#1E1008] text-primary border border-[#3A2010]
+           text-[9px] font-bold px-2 py-0.5 rounded tracking-wider uppercase;
+  }
+
+  .badge-amber {
+    @apply bg-[#1E1608] text-secondary border border-[#3A2A08]
+           text-[9px] font-bold px-2 py-0.5 rounded tracking-wider uppercase;
+  }
+
+  .msg-user {
+    @apply bg-primary text-linen rounded-2xl rounded-br-sm
+           px-4 py-2.5 text-sm leading-relaxed self-end max-w-[70%];
+  }
+
+  .msg-ai {
+    @apply bg-base border border-border text-muted rounded-2xl rounded-tl-sm
+           px-4 py-2.5 text-sm leading-7 max-w-[88%];
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[11px]
+           text-muted font-medium cursor-pointer transition-all duration-150
+           hover:bg-surface hover:text-linen;
+  }
+
+  .sidebar-item-active {
+    @apply bg-border text-linen;
+  }
+
+  .section-eyebrow {
+    @apply text-[10px] font-bold tracking-[0.12em] uppercase text-hint;
+  }
+
+  .section-title {
+    @apply text-2xl font-extrabold text-linen tracking-tight;
+  }
+
+  .section-sub {
+    @apply text-xs text-hint mt-1;
+  }
+}
+
+@layer utilities {
+  .glow-orange {
+    background: radial-gradient(ellipse, rgba(254,114,53,0.13) 0%, transparent 70%);
+  }
+  .glow-blue {
+    background: radial-gradient(ellipse, rgba(0,195,255,0.06) 0%, transparent 70%);
+  }
+  .text-gradient {
+    background: linear-gradient(90deg, #FE7235, #FEA735);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }

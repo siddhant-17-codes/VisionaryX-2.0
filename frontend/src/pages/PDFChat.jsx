@@ -1,73 +1,69 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { usePDF } from "../hooks/usePDF";
 import PDFUploader from "../components/pdf/PDFUploader";
 import SuggestedQuestions from "../components/pdf/SuggestedQuestions";
-import CitationCard from "../components/pdf/CitationCard";
 import ChatWindow from "../components/chat/ChatWindow";
 import ChatInput from "../components/chat/ChatInput";
-import { uploadPDFs, queryPDF } from "../api/pdf";
 import toast from "react-hot-toast";
 
 export default function PDFChat() {
-  const [sessionId, setSessionId] = useState(null);
-  const [suggested, setSuggested] = useState([]);
-  const [messages, setMessages] = useState([]);
-  const [citations, setCitations] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const location = useLocation();
+  const restoreId = location.state?.sessionId || null;
+  const {
+    messages, suggested, loading, uploading, indexed,
+    error, upload, query, reset, uploadedFiles, uploadedFileObjects, retry,
+  } = usePDF(restoreId);
 
-  const handleUpload = async (files) => {
-    setUploading(true);
-    try {
-      const data = await uploadPDFs(files);
-      setSessionId(data.session_id);
-      setSuggested(data.questions || []);
-      setMessages([]);
-      toast.success("PDFs processed!");
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleQuery = async (question) => {
-    if (!sessionId) return toast.error("Please upload PDFs first.");
-    const updated = [...messages, { role: "user", content: question }];
-    setMessages(updated);
-    setSuggested([]);
-    setLoading(true);
-    try {
-      const data = await queryPDF(sessionId, question, updated.slice(0, -1));
-      setMessages([...updated, { role: "assistant", content: data.answer }]);
-      setCitations(data.citations || []);
-    } catch (e) {
-      toast.error(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (error?.type === "network") toast.error("Backend connection lost");
+  }, [error]);
 
   return (
-    <div className="flex h-screen">
-      <div className="flex flex-col flex-1">
-        <div className="px-6 py-4 border-b border-surface-600">
-          <h1 className="font-medium">PDF Chat</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Upload documents and ask questions with cited answers</p>
+    <div className="flex flex-col h-screen">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 className="text-sm font-bold text-linen">PDF Chat</h1>
+          <p className="text-[10px] text-hint mt-0.5">
+            {indexed ? `${uploadedFiles.length} file(s) indexed · Ask anything` : "Upload PDF or DOCX to begin"}
+          </p>
         </div>
-        {!sessionId
-          ? <div className="p-6"><PDFUploader onUpload={handleUpload} loading={uploading} /></div>
-          : <>
-              <SuggestedQuestions questions={suggested} onSelect={handleQuery} />
-              <ChatWindow messages={messages} loading={loading} />
-              <ChatInput onSend={handleQuery} loading={loading} />
-            </>
-        }
+        <div className="flex items-center gap-2 flex-wrap">
+          {indexed && uploadedFileObjects.map((f, i) => (
+            <button key={i}
+              onClick={() => window.open(URL.createObjectURL(f), "_blank")}
+              className="text-[9px] text-cyan border border-[#0A2A30] bg-[#061418]
+                         rounded px-2 py-0.5 cursor-pointer hover:bg-[#0a1e28] transition-colors">
+              {f.name}
+            </button>
+          ))}
+          {indexed && <span className="badge-blue">RAG active</span>}
+          <span className="badge-orange">FAISS</span>
+          {indexed && (
+            <button onClick={reset}
+                    className="text-[9px] text-hint hover:text-linen border border-border
+                               rounded px-2 py-0.5 transition-colors cursor-pointer bg-transparent">
+              New doc
+            </button>
+          )}
+        </div>
       </div>
-      {citations.length > 0 && (
-        <aside className="w-72 border-l border-surface-600 overflow-y-auto p-4 space-y-3">
-          <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Sources</p>
-          {citations.map((c, i) => <CitationCard key={i} citation={c} index={i} />)}
-        </aside>
+
+      {!indexed ? (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-lg">
+            <PDFUploader onUpload={upload} loading={uploading} />
+          </div>
+        </div>
+      ) : (
+        <>
+          {suggested.length > 0 && (
+            <SuggestedQuestions questions={suggested} onSelect={query} />
+          )}
+          <ChatWindow messages={messages} loading={loading} error={error} onRetry={retry}
+                      emptyText="Ask anything about your document…" />
+          <ChatInput onSend={query} loading={loading} placeholder="Ask about your document…" />
+        </>
       )}
     </div>
   );

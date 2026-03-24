@@ -17,8 +17,12 @@ env/
 
 # ── VisionaryX runtime files ──────────────────────────────────────────────
 backend/faiss_index/
-backend/temp_uploads/
 backend/logs/
+backend/storage/chats/*.json
+backend/storage/documents/*/
+!backend/storage/.gitkeep
+!backend/storage/chats/.gitkeep
+!backend/storage/documents/.gitkeep
 
 # ── Future roadmap (private) ──────────────────────────────────────────────
 FUTURE.md
@@ -40,8 +44,6 @@ desktop.ini
 .idea/
 *.swp
 *.swo
-*.sublime-project
-*.sublime-workspace
 
 # ── Misc ──────────────────────────────────────────────────────────────────
 *.log

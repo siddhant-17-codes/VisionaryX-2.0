@@ -1,6 +1,6 @@
 import client from "./client";
 
-export const queryImage = (file, prompt) => {
+export const queryImage = (file, prompt = "") => {
   const form = new FormData();
   form.append("file", file);
   form.append("prompt", prompt || "Describe this image in detail.");
