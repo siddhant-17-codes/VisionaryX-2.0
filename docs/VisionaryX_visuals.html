@@ -1,0 +1,462 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif}
+.root{background:#08060E;color:#FCF5EF;min-height:1400px}
+
+/* ── NAV ── */
+.nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;border-bottom:1px solid #1C1628;background:#08060E}
+.logo{font-size:17px;font-weight:800;letter-spacing:-0.03em}
+.logo-x{color:#FE7235}
+.logo-badge{background:#FE7235;color:#FCF5EF;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-left:6px;vertical-align:middle}
+.nav-links{display:flex;gap:24px}
+.nav-link{font-size:12px;color:#3D3050;font-weight:500}
+.nav-cta{background:#FE7235;color:#FCF5EF;border:none;padding:8px 18px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+
+/* ── LANDING HERO ── */
+.landing{padding:80px 32px 64px;text-align:center;position:relative;overflow:hidden;border-bottom:1px solid #1C1628}
+.glow-o{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:500px;height:280px;background:radial-gradient(ellipse,rgba(254,114,53,0.13) 0%,transparent 70%);pointer-events:none}
+.glow-b{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:300px;height:180px;background:radial-gradient(ellipse,rgba(0,195,255,0.06) 0%,transparent 70%);pointer-events:none}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;background:#100D1A;border:1px solid #2A2040;color:#FEA735;padding:5px 14px;border-radius:30px;font-size:11px;font-weight:600;margin-bottom:28px}
+.pulse{width:6px;height:6px;background:#FE7235;border-radius:50%}
+.hero-title{font-size:46px;font-weight:800;letter-spacing:-0.04em;line-height:1.05;margin-bottom:18px}
+.ht1{color:#FCF5EF;display:block}
+.ht2{background:linear-gradient(90deg,#FE7235,#FEA735);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:block}
+.ht3{color:#2A2040;display:block;font-size:38px}
+.hero-desc{font-size:14px;color:#4A3D5A;line-height:1.7;max-width:440px;margin:0 auto 36px}
+.hero-desc strong{color:#FEA735;font-weight:500}
+.hero-btns{display:flex;gap:10px;justify-content:center;margin-bottom:52px}
+.btn-main{background:#FE7235;color:#FCF5EF;border:none;padding:12px 26px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-ghost{background:transparent;color:#00C3FF;border:1px solid #1C3A4A;padding:12px 26px;border-radius:9px;font-size:13px;font-weight:500;cursor:pointer}
+.stats-row{display:flex;gap:0;justify-content:center;border:1px solid #1C1628;border-radius:12px;background:#0D0B16;overflow:hidden;max-width:480px;margin:0 auto}
+.stat{flex:1;padding:14px 10px;text-align:center;border-right:1px solid #1C1628}
+.stat:last-child{border-right:none}
+.sn{font-size:16px;font-weight:800;color:#FE7235}
+.sl{font-size:9px;color:#3D3050;font-weight:600;margin-top:2px;text-transform:uppercase;letter-spacing:0.07em}
+
+/* ── STRIP ── */
+.strip{background:#0D0B16;border-bottom:1px solid #1C1628;padding:12px 32px;display:flex;gap:32px;overflow:hidden}
+.si{display:flex;align-items:center;gap:7px;font-size:10px;color:#3D3050;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;flex-shrink:0}
+.sd{width:5px;height:5px;border-radius:50%}
+.so{background:#FE7235}.sb2{background:#00C3FF}.sa{background:#FEA735}
+
+/* ── FEATURES ── */
+.features{padding:60px 32px}
+.sec-ey{text-align:center;font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#3D3050;margin-bottom:8px}
+.sec-t{text-align:center;font-size:26px;font-weight:800;color:#FCF5EF;margin-bottom:4px;letter-spacing:-0.02em}
+.sec-t span{color:#FE7235}
+.sec-s{text-align:center;font-size:12px;color:#3D3050;margin-bottom:32px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.card{background:#0D0B16;border:1px solid #1C1628;border-radius:14px;padding:20px;position:relative;overflow:hidden}
+.card.feat{border-color:#2A1E14;background:#110D09}
+.cg{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;opacity:0.08;pointer-events:none}
+.cgo{background:#FE7235}.cgb{background:#0077FF}
+.ci{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:14px}
+.cio{background:#1E1008;border:1px solid #3A2010}
+.cib{background:#060F1E;border:1px solid #0D2040}
+.cic{background:#061418;border:1px solid #0A2A30}
+.ctop{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px}
+.cn{font-size:14px;font-weight:700;color:#FCF5EF;margin-bottom:6px}
+.cd{font-size:11px;color:#3D3050;line-height:1.7}
+.cbadge{font-size:9px;font-weight:700;color:#FEA735;background:#1E1608;border:1px solid #3A2A08;padding:3px 8px;border-radius:5px;letter-spacing:0.05em;text-transform:uppercase}
+.cfoot{margin-top:14px;padding-top:12px;border-top:1px solid #1C1628;display:flex;justify-content:space-between;align-items:center}
+.ctech{font-size:10px;color:#2A2040}
+.carr{font-size:11px;color:#FE7235;font-weight:700}
+
+/* ── WORKSPACE ── */
+.workspace-section{padding:0 32px 60px}
+.ws-frame{display:flex;background:#0D0B16;border:1px solid #1C1628;border-radius:18px;overflow:hidden;height:480px}
+
+/* SIDEBAR */
+.sidebar{width:220px;background:#08060E;border-right:1px solid #1C1628;display:flex;flex-direction:column;flex-shrink:0}
+.sb-top{padding:18px 14px 14px;border-bottom:1px solid #1C1628}
+.sb-logo{font-size:13px;font-weight:800;color:#FCF5EF;letter-spacing:-0.02em}
+.sb-logo span{color:#FE7235}
+.sb-tagline{font-size:9px;color:#3D3050;margin-top:2px}
+.sb-new{display:flex;align-items:center;justify-content:center;gap:6px;background:#FE7235;color:#FCF5EF;border:none;border-radius:7px;padding:8px;font-size:11px;font-weight:700;cursor:pointer;width:100%;margin-top:12px}
+.sb-nav{padding:12px 10px;flex:1;overflow-y:auto}
+.sb-section{font-size:9px;font-weight:700;color:#2A2040;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 6px 8px}
+.sb-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;font-size:11px;color:#4A3D5A;margin-bottom:2px;cursor:pointer;font-weight:500}
+.sb-item.active{background:#1C1628;color:#FCF5EF}
+.sb-item.active .sbdot{background:#FE7235}
+.sbdot{width:5px;height:5px;border-radius:50%;background:#2A2040;flex-shrink:0}
+.sb-icon{font-size:12px;width:14px;text-align:center}
+.sb-sessions{padding:0 10px 12px}
+.sb-sess-label{font-size:9px;font-weight:700;color:#2A2040;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 6px 8px}
+.sess-item{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:6px;cursor:pointer;margin-bottom:2px}
+.sess-item:hover{background:#0D0B16}
+.sess-dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.sess-dot-chat{background:#FEA735}
+.sess-dot-pdf{background:#00C3FF}
+.sess-title{font-size:11px;color:#4A3D5A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.sess-time{font-size:9px;color:#2A2040;flex-shrink:0}
+.sb-bottom{padding:12px 14px;border-top:1px solid #1C1628}
+.sb-model{font-size:9px;color:#2A2040;text-align:center}
+.sb-model span{color:#00C3FF;font-weight:700}
+
+/* MAIN CONTENT */
+.ws-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.ws-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #1C1628}
+.ws-title{font-size:13px;font-weight:700;color:#FCF5EF}
+.ws-sub{font-size:10px;color:#3D3050;margin-top:2px}
+.ws-badges{display:flex;gap:6px}
+.wbadge-b{background:#061418;color:#00C3FF;border:1px solid #0A2A30;padding:3px 8px;border-radius:5px;font-size:9px;font-weight:700}
+.wbadge-o{background:#1E1008;color:#FE7235;border:1px solid #3A2010;padding:3px 8px;border-radius:5px;font-size:9px;font-weight:700}
+.ws-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.msg-u{background:#FE7235;border-radius:12px 12px 3px 12px;padding:10px 14px;font-size:12px;color:#FCF5EF;align-self:flex-end;max-width:70%;line-height:1.5}
+.msg-a{background:#08060E;border:1px solid #1C1628;border-radius:3px 12px 12px 12px;padding:10px 14px;font-size:12px;color:#6B5E7A;max-width:85%;line-height:1.7}
+.msg-a strong{color:#FEA735;font-weight:600}
+.msg-a b{color:#00C3FF;font-weight:600}
+.typing{display:flex;align-items:center;gap:4px;padding:10px 14px;background:#08060E;border:1px solid #1C1628;border-radius:3px 12px 12px 12px;width:fit-content}
+.td{width:6px;height:6px;border-radius:50%;background:#3D3050}
+.ws-input-area{padding:12px 16px;border-top:1px solid #1C1628}
+.ws-input-wrap{display:flex;gap:8px;align-items:center;background:#08060E;border:1px solid #1C1628;border-radius:10px;padding:4px 4px 4px 14px}
+.ws-input{flex:1;background:transparent;border:none;color:#FCF5EF;font-size:12px;outline:none;font-family:inherit}
+.ws-send{background:#FE7235;color:#FCF5EF;border:none;padding:8px 16px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer}
+
+/* ── PDF PAGE ── */
+.pdf-section{padding:0 32px 60px}
+.pdf-frame{display:flex;background:#0D0B16;border:1px solid #1C1628;border-radius:18px;overflow:hidden;height:420px}
+.pdf-main{flex:1;display:flex;flex-direction:column}
+.pdf-header{padding:16px 20px;border-bottom:1px solid #1C1628;display:flex;align-items:center;justify-content:space-between}
+.pdf-body{display:flex;flex:1;overflow:hidden}
+.pdf-chat{flex:1;display:flex;flex-direction:column;padding:16px;overflow-y:auto;gap:10px;border-right:1px solid #1C1628}
+.pdf-citations{width:240px;padding:14px;overflow-y:auto;background:#08060E}
+.cite-hdr{font-size:9px;font-weight:700;color:#3D3050;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px}
+.cite{background:#0D0B16;border:1px solid #1C1628;border-radius:8px;padding:10px;margin-bottom:8px}
+.cite-bar{height:2px;background:linear-gradient(90deg,#0077FF,transparent);border-radius:1px;margin-bottom:8px}
+.cite-top{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.cite-num{width:16px;height:16px;background:#0077FF;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#FCF5EF}
+.cite-pg{font-size:9px;color:#00C3FF;font-weight:600}
+.cite-txt{font-size:10px;color:#2A2040;line-height:1.5}
+.sugg-pills{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.sugg{background:#08060E;border:1px solid #1C1628;border-radius:7px;padding:7px 10px;font-size:11px;color:#4A3D5A;cursor:pointer}
+.upload-zone{margin:16px;border:1.5px dashed #1C1628;border-radius:10px;padding:24px;text-align:center;cursor:pointer}
+.uz-icon{font-size:24px;margin-bottom:8px}
+.uz-title{font-size:12px;font-weight:600;color:#4A3D5A;margin-bottom:4px}
+.uz-sub{font-size:10px;color:#2A2040}
+
+/* ── IMAGE PAGES ── */
+.image-section{padding:0 32px 60px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.img-frame{background:#0D0B16;border:1px solid #1C1628;border-radius:14px;padding:20px}
+.img-title{font-size:13px;font-weight:700;color:#FCF5EF;margin-bottom:4px}
+.img-sub{font-size:11px;color:#3D3050;margin-bottom:16px}
+.img-upload{border:1.5px dashed #1C1628;border-radius:10px;padding:28px;text-align:center;margin-bottom:12px}
+.img-upload-icon{font-size:22px;margin-bottom:6px}
+.img-upload-txt{font-size:11px;color:#3D3050}
+.img-input{background:#08060E;border:1px solid #1C1628;border-radius:7px;padding:8px 12px;width:100%;color:#FCF5EF;font-size:11px;margin-bottom:10px}
+.img-btn{background:#FE7235;color:#FCF5EF;border:none;padding:9px;border-radius:7px;font-size:11px;font-weight:700;width:100%;cursor:pointer;margin-bottom:12px}
+.img-result{background:#08060E;border:1px solid #1C1628;border-radius:8px;padding:12px}
+.img-result-label{font-size:9px;font-weight:700;color:#00C3FF;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.img-result-txt{font-size:11px;color:#4A3D5A;line-height:1.6}
+.gen-preview{background:#08060E;border:1px solid #1C1628;border-radius:8px;height:140px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;position:relative;overflow:hidden}
+.gen-placeholder{text-align:center}
+.gen-icon{font-size:24px;margin-bottom:6px}
+.gen-txt{font-size:10px;color:#2A2040}
+.gen-shimmer{position:absolute;inset:0;background:linear-gradient(135deg,#1C1628 25%,#2A2040 50%,#1C1628 75%);opacity:0.4}
+.dl-btn{background:transparent;color:#00C3FF;border:1px solid #0A2A30;padding:7px;border-radius:6px;font-size:10px;font-weight:600;width:100%;cursor:pointer}
+
+/* ── FOOTER ── */
+.footer{border-top:1px solid #1C1628;padding:24px 32px;display:flex;align-items:center;justify-content:space-between;background:#08060E}
+.fl{font-size:13px;font-weight:800;color:#FCF5EF}
+.fl span{color:#FE7235}
+.ft{font-size:10px;color:#2A2040}
+.flinks{display:flex;gap:16px}
+.flink{font-size:10px;color:#2A2040;cursor:pointer}
+</style>
+
+<div class="root">
+
+  <!-- NAV -->
+  <div class="nav">
+    <div class="logo">Visionary<span class="logo-x">X</span><span class="logo-badge">2.0</span></div>
+    <div class="nav-links">
+      <span class="nav-link">Features</span>
+      <span class="nav-link">Demo</span>
+      <span class="nav-link">GitHub</span>
+    </div>
+    <button class="nav-cta">Launch workspace</button>
+  </div>
+
+  <!-- HERO -->
+  <div class="landing">
+    <div class="glow-o"></div>
+    <div class="glow-b"></div>
+    <div class="eyebrow"><span class="pulse"></span> Gemini 2.5 Flash · FAISS · FLUX · FastAPI + React</div>
+    <div class="hero-title">
+      <span class="ht1">Intelligence, not</span>
+      <span class="ht2">just answers.</span>
+      <span class="ht3">Your documents. Your context.</span>
+    </div>
+    <div class="hero-desc">The AI workspace that <strong>cites its sources</strong>. Query documents, analyse images, generate visuals — with persistent chat history.</div>
+    <div class="hero-btns">
+      <button class="btn-main">Launch workspace →</button>
+      <button class="btn-ghost">View on GitHub ↗</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="sn">RAG</div><div class="sl">Core engine</div></div>
+      <div class="stat"><div class="sn">FAISS</div><div class="sl">Vector search</div></div>
+      <div class="stat"><div class="sn">2.5</div><div class="sl">Gemini Flash</div></div>
+      <div class="stat"><div class="sn">FLUX</div><div class="sl">Image gen</div></div>
+    </div>
+  </div>
+
+  <!-- STRIP -->
+  <div class="strip">
+    <div class="si"><span class="sd so"></span>Semantic chunking</div>
+    <div class="si"><span class="sd sb2"></span>Page-level citations</div>
+    <div class="si"><span class="sd sa"></span>Persistent chat sessions</div>
+    <div class="si"><span class="sd so"></span>Multi-document RAG</div>
+    <div class="si"><span class="sd sb2"></span>Gemini Vision</div>
+    <div class="si"><span class="sd sa"></span>Conversation memory</div>
+    <div class="si"><span class="sd so"></span>FLUX image generation</div>
+    <div class="si"><span class="sd sb2"></span>FastAPI + React</div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="features">
+    <div class="sec-ey">Capabilities</div>
+    <div class="sec-t">Four features. <span>One workspace.</span></div>
+    <div class="sec-s">Production-grade architecture. Every feature is a full pipeline.</div>
+    <div class="cards">
+      <div class="card feat">
+        <div class="cg cgo"></div>
+        <div class="ctop">
+          <div class="ci cio">📄</div>
+          <div class="cbadge">Hero feature</div>
+        </div>
+        <div class="cn">PDF Chat + RAG</div>
+        <div class="cd">Upload PDF or DOCX. Every answer includes page-level citations. Adaptive relevance threshold. Multi-document sessions persisted to disk.</div>
+        <div class="cfoot"><span class="ctech">FAISS · LangChain · Gemini</span><span class="carr">→</span></div>
+      </div>
+      <div class="card">
+        <div class="cg cgo" style="opacity:0.03"></div>
+        <div class="ci cio">💬</div>
+        <div class="cn">General Chat</div>
+        <div class="cd">Full conversation memory per turn. Chat sessions saved to disk. Sidebar shows all previous chats. Start fresh anytime.</div>
+        <div class="cfoot"><span class="ctech">Gemini 2.5 Flash</span><span class="carr">→</span></div>
+      </div>
+      <div class="card">
+        <div class="cg cgb" style="opacity:0.04"></div>
+        <div class="ci cib">🖼️</div>
+        <div class="cn">Image Query</div>
+        <div class="cd">Upload any image. Ask anything about it. Gemini Vision returns detailed structured analysis.</div>
+        <div class="cfoot"><span class="ctech">Gemini Vision</span><span class="carr">→</span></div>
+      </div>
+      <div class="card">
+        <div class="cg cgb" style="opacity:0.04"></div>
+        <div class="ci cic">✨</div>
+        <div class="cn">Text to Image</div>
+        <div class="cd">Describe what you want. FLUX.1-schnell generates and delivers a downloadable image.</div>
+        <div class="cfoot"><span class="ctech">FLUX · HuggingFace</span><span class="carr">→</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WORKSPACE — CHAT PAGE -->
+  <div class="workspace-section">
+    <div class="sec-ey">Workspace — Chat page</div>
+    <div class="sec-t">Persistent sessions. <span>Like ChatGPT.</span></div>
+    <div class="sec-s">Every conversation saved. Sidebar shows history. New chat anytime.</div>
+    <div class="ws-frame">
+
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="sb-top">
+          <div class="sb-logo">Visionary<span>X</span></div>
+          <div class="sb-tagline">AI workspace 2.0</div>
+          <button class="sb-new">+ New chat</button>
+        </div>
+        <div class="sb-nav">
+          <div class="sb-section">Navigate</div>
+          <div class="sb-item active"><span class="sb-icon">💬</span><span class="sbdot"></span> Chat</div>
+          <div class="sb-item"><span class="sb-icon">📄</span><span class="sbdot" style="background:#2A2040"></span> PDF Chat</div>
+          <div class="sb-item"><span class="sb-icon">🖼️</span><span class="sbdot" style="background:#2A2040"></span> Image Query</div>
+          <div class="sb-item"><span class="sb-icon">✨</span><span class="sbdot" style="background:#2A2040"></span> Text to Image</div>
+        </div>
+        <div class="sb-sessions">
+          <div class="sb-sess-label">Recent chats</div>
+          <div class="sess-item">
+            <div class="sess-dot sess-dot-chat"></div>
+            <div class="sess-title">What is RAG and how does it work?</div>
+            <div class="sess-time">2m</div>
+          </div>
+          <div class="sess-item">
+            <div class="sess-dot sess-dot-pdf"></div>
+            <div class="sess-title">SiddhantThakurCV.pdf</div>
+            <div class="sess-time">1h</div>
+          </div>
+          <div class="sess-item">
+            <div class="sess-dot sess-dot-chat"></div>
+            <div class="sess-title">Explain FAISS vector search</div>
+            <div class="sess-time">3h</div>
+          </div>
+          <div class="sess-item">
+            <div class="sess-dot sess-dot-pdf"></div>
+            <div class="sess-title">Atomic Habits.pdf</div>
+            <div class="sess-time">1d</div>
+          </div>
+        </div>
+        <div class="sb-bottom">
+          <div class="sb-model">Model: <span>Gemini 2.5 Flash</span></div>
+        </div>
+      </div>
+
+      <!-- CHAT MAIN -->
+      <div class="ws-main">
+        <div class="ws-header">
+          <div>
+            <div class="ws-title">General Chat</div>
+            <div class="ws-sub">Memory enabled · session auto-saved</div>
+          </div>
+          <div class="ws-badges">
+            <div class="wbadge-b">Live</div>
+            <div class="wbadge-o">Gemini 2.5</div>
+          </div>
+        </div>
+        <div class="ws-messages">
+          <div class="msg-u">What is the difference between RAG and fine-tuning?</div>
+          <div class="msg-a"><strong>RAG</strong> retrieves relevant context at query time — no retraining needed, always current, dramatically less hallucination on factual queries.<br><br><b>Fine-tuning</b> bakes knowledge into model weights — better for style consistency, but expensive to update. For grounded factual answers, RAG wins every time.</div>
+          <div class="msg-u">Which one does VisionaryX use?</div>
+          <div class="typing"><div class="td"></div><div class="td"></div><div class="td"></div></div>
+        </div>
+        <div class="ws-input-area">
+          <div class="ws-input-wrap">
+            <input class="ws-input" placeholder="Ask VisionaryX anything…" readonly />
+            <button class="ws-send">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF CHAT PAGE -->
+  <div class="pdf-section">
+    <div class="sec-ey">Workspace — PDF Chat page</div>
+    <div class="sec-t">RAG pipeline. <span>Citations included.</span></div>
+    <div class="sec-s">Upload documents. Get answers. Every response traces to a source page.</div>
+    <div class="pdf-frame">
+      <div class="sidebar" style="width:200px">
+        <div class="sb-top">
+          <div class="sb-logo">Visionary<span>X</span></div>
+          <div class="sb-tagline">AI workspace 2.0</div>
+          <button class="sb-new">+ New chat</button>
+        </div>
+        <div class="sb-nav">
+          <div class="sb-section">Navigate</div>
+          <div class="sb-item"><span class="sb-icon">💬</span><span class="sbdot" style="background:#2A2040"></span> Chat</div>
+          <div class="sb-item active"><span class="sb-icon">📄</span><span class="sbdot"></span> PDF Chat</div>
+          <div class="sb-item"><span class="sb-icon">🖼️</span><span class="sbdot" style="background:#2A2040"></span> Image Query</div>
+          <div class="sb-item"><span class="sb-icon">✨</span><span class="sbdot" style="background:#2A2040"></span> Text to Image</div>
+        </div>
+        <div class="sb-sessions">
+          <div class="sb-sess-label">PDF sessions</div>
+          <div class="sess-item">
+            <div class="sess-dot sess-dot-pdf"></div>
+            <div class="sess-title">SiddhantThakurCV.pdf</div>
+            <div class="sess-time">now</div>
+          </div>
+          <div class="sess-item">
+            <div class="sess-dot sess-dot-pdf"></div>
+            <div class="sess-title">Atomic Habits.pdf</div>
+            <div class="sess-time">1d</div>
+          </div>
+        </div>
+        <div class="sb-bottom">
+          <div class="sb-model">Model: <span>Gemini 2.5 Flash</span></div>
+        </div>
+      </div>
+      <div class="pdf-main">
+        <div class="pdf-header">
+          <div>
+            <div class="ws-title">PDF Chat</div>
+            <div class="ws-sub">SiddhantThakurCV.pdf · 1 file indexed</div>
+          </div>
+          <div class="ws-badges">
+            <div class="wbadge-b">RAG active</div>
+            <div class="wbadge-o">FAISS</div>
+          </div>
+        </div>
+        <div class="pdf-body">
+          <div class="pdf-chat">
+            <div style="font-size:9px;font-weight:700;color:#3D3050;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px">Suggested questions</div>
+            <div class="sugg-pills">
+              <div class="sugg">What are Siddhant's key technical skills?</div>
+              <div class="sugg">Which projects use RAG or LLM integration?</div>
+            </div>
+            <div class="msg-u">What are Siddhant’s core technical skills?</div>
+            <div class="msg-a"><strong>From your document —</strong> His key skills include Python, FastAPI, REST APIs, SQL, PostgreSQL, Data Structures, OOP, System Design, and modern AI technologies like RAG and LangChain.</div>
+            <div class="msg-u">Which backend technologies does Siddhant specialize in?</div>
+            <div class="msg-a"><strong>From your document —</strong> He specializes in FastAPI development, async programming, API design, database optimization, and building modular scalable backend architectures.</div>
+            <div class="ws-input-wrap" style="margin-top:auto">
+              <input class="ws-input" placeholder="Ask about your document…" readonly />
+              <button class="ws-send">Send</button>
+            </div>
+          </div>
+          <div class="pdf-citations">
+            <div class="cite-hdr">Sources</div>
+            <div class="cite">
+              <div class="cite-bar"></div>
+              <div class="cite-top"><div class="cite-num">1</div><div class="cite-pg">Page 1 · Education</div></div>
+              <div class="cite-txt">Master of Computer Applications (MCA) — Techno Main Salt Lake (MAKAUT) 2023–2025 · CGPA: 8.11…</div>
+            </div>
+            <div class="cite">
+              <div class="cite-bar" style="background:linear-gradient(90deg,#00C3FF,transparent)"></div>
+              <div class="cite-top"><div class="cite-num" style="background:#00C3FF">2</div><div class="cite-pg" style="color:#00C3FF">Page 1 · Education</div></div>
+              <div class="cite-txt">B.Sc (Hons) Computer Science — Sarsuna College, University of Calcutta 2019–2022 · CGPA: 7.95…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE PAGES -->
+  <div class="image-section">
+    <div class="sec-ey">Workspace — Image pages</div>
+    <div class="sec-t">Vision query. <span>Image generation.</span></div>
+    <div class="sec-s">Two distinct image features. One clean interface each.</div>
+    <div class="two-col">
+      <div class="img-frame">
+        <div class="img-title">Image Query</div>
+        <div class="img-sub">Upload an image · Ask anything · Gemini Vision responds</div>
+        <div class="img-upload">
+          <div class="img-upload-icon">🖼️</div>
+          <div class="img-upload-txt" style="color:#3D3050;font-size:11px">Click to upload · JPG, PNG supported</div>
+        </div>
+        <input class="img-input" placeholder="What is in this image? (optional)" readonly />
+        <button class="img-btn">Analyse image</button>
+        <div class="img-result">
+          <div class="img-result-label">VisionaryX response</div>
+          <div class="img-result-txt">The image shows a structured assessment breakdown with two main sections — Part A Foundation and Part B Advanced — with time allocations and question counts clearly tabulated…</div>
+        </div>
+      </div>
+      <div class="img-frame">
+        <div class="img-title">Text to Image</div>
+        <div class="img-sub">Describe your visual · FLUX generates · Download ready</div>
+        <div class="gen-preview">
+          <div class="gen-shimmer"></div>
+          <div class="gen-placeholder">
+            <div class="gen-icon">✨</div>
+            <div class="gen-txt" style="color:#2A2040;font-size:10px">Generated image appears here</div>
+          </div>
+        </div>
+        <input class="img-input" placeholder="A futuristic city at night with neon lights…" readonly />
+        <button class="img-btn">Generate image</button>
+        <button class="dl-btn">⬇ Download image</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="fl">Visionary<span>X</span></div>
+    <div class="ft">Built with FastAPI · React · Gemini 2.5 · FAISS · FLUX</div>
+    <div class="flinks">
+      <span class="flink">GitHub</span>
+      <span class="flink">Docs</span>
+    </div>
+  </div>
+
+</div>
