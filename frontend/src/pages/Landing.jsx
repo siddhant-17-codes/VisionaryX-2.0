@@ -51,11 +51,12 @@ export default function Landing() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[280px] glow-orange pointer-events-none" />
         <div className="absolute top-8 left-1/2 -translate-x-1/2 w-[300px] h-[200px] glow-blue pointer-events-none" />
         <div className="relative">
-          <div className="inline-flex items-center gap-2 bg-[#100D1A] border border-[#2A2040]
+          {/* <div className="inline-flex items-center gap-2 bg-[#100D1A] border border-[#2A2040]
                           text-secondary px-4 py-1.5 rounded-full text-[11px] font-semibold mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             Gemini 2.5 Flash · FAISS · FLUX · FastAPI + React
-          </div>
+          </div>*/}
+          
           <h1 className="text-5xl font-extrabold tracking-tight leading-tight mb-4">
             <span className="block text-linen">Intelligence, not</span>
             <span className="block text-gradient">just answers.</span>
