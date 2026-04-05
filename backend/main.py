@@ -13,9 +13,7 @@ from routers.sessions import router as sessions_router
 settings = get_settings()
 logger = setup_logger("visionaryx.main")
 
-os.makedirs("storage/chats", exist_ok=True)
-os.makedirs("storage/documents", exist_ok=True)
-os.makedirs("faiss_index", exist_ok=True)
+
 os.makedirs("logs", exist_ok=True)
 
 app = FastAPI(

@@ -1,89 +1,59 @@
-import json
-import os
-import shutil
 import uuid
+import os
+import base64
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from typing import Optional
+from supabase import create_client, Client
 from config.logger import setup_logger
 
 logger = setup_logger("visionaryx.storage")
 
-CHATS_DIR = "storage/chats"
-DOCS_DIR = "storage/documents"
+def _get_client() -> Client:
+    return create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
 
+TABLE = "sessions"
 
 @dataclass
 class ChatSession:
     id: str
     title: str
-    mode: str  # "chat" | "pdf"
+    mode: str
     created_at: str
     updated_at: str
     messages: list
-    session_id: Optional[str] = None  # PDF session_id if mode == "pdf"
-    documents: Optional[list] = None  # filenames if mode == "pdf"
-
-
-def _ensure_dirs():
-    os.makedirs(CHATS_DIR, exist_ok=True)
-    os.makedirs(DOCS_DIR, exist_ok=True)
+    session_id: Optional[str] = None
+    documents: Optional[list] = None
 
 
 def create_chat_session(mode: str = "chat", title: str = "New chat") -> ChatSession:
-    _ensure_dirs()
     session = ChatSession(
-        id=str(uuid.uuid4()),
-        title=title,
-        mode=mode,
+        id=str(uuid.uuid4()), title=title, mode=mode,
         created_at=datetime.now().isoformat(),
         updated_at=datetime.now().isoformat(),
-        messages=[],
-        session_id=None,
-        documents=[],
+        messages=[], session_id=None, documents=[],
     )
-    _save_session(session)
-    logger.info(f"Created chat session: {session.id} | mode={mode}")
+    _get_client().table(TABLE).insert(asdict(session)).execute()
+    logger.info(f"Created session: {session.id} | mode={mode}")
     return session
 
 
-def _save_session(session: ChatSession):
-    _ensure_dirs()
-    path = os.path.join(CHATS_DIR, f"{session.id}.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(asdict(session), f, ensure_ascii=False, indent=2)
-
-
 def load_session(session_id: str) -> Optional[ChatSession]:
-    path = os.path.join(CHATS_DIR, f"{session_id}.json")
-    if not os.path.exists(path):
+    res = _get_client().table(TABLE).select("*").eq("id", session_id).execute()
+    if not res.data:
         return None
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return ChatSession(**data)
+    return ChatSession(**res.data[0])
 
 
 def list_sessions() -> list[dict]:
-    _ensure_dirs()
-    sessions = []
-    for fname in os.listdir(CHATS_DIR):
-        if fname.endswith(".json"):
-            path = os.path.join(CHATS_DIR, fname)
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                sessions.append({
-                    "id": data["id"],
-                    "title": data["title"],
-                    "mode": data["mode"],
-                    "created_at": data["created_at"],
-                    "updated_at": data["updated_at"],
-                    "message_count": len(data.get("messages", [])),
-                    "documents": data.get("documents", []),
-                })
-            except Exception as e:
-                logger.warning(f"Could not read session {fname}: {e}")
-    return sorted(sessions, key=lambda x: x["updated_at"], reverse=True)
+    res = _get_client().table(TABLE).select(
+        "id,title,mode,created_at,updated_at,documents"
+    ).order("updated_at", desc=True).execute()
+    return [{
+        "id": r["id"], "title": r["title"], "mode": r["mode"],
+        "created_at": r["created_at"], "updated_at": r["updated_at"],
+        "message_count": 0, "documents": r.get("documents") or [],
+    } for r in res.data]
 
 
 def append_message(session_id: str, role: str, content: str) -> Optional[ChatSession]:
@@ -93,9 +63,13 @@ def append_message(session_id: str, role: str, content: str) -> Optional[ChatSes
     session.messages.append({"role": role, "content": content})
     session.updated_at = datetime.now().isoformat()
     if len(session.messages) == 2 and session.title == "New chat":
-        first_user_msg = next((m["content"] for m in session.messages if m["role"] == "user"), "")
-        session.title = first_user_msg[:50] + ("..." if len(first_user_msg) > 50 else "")
-    _save_session(session)
+        first = next((m["content"] for m in session.messages if m["role"] == "user"), "")
+        session.title = first[:50] + ("..." if len(first) > 50 else "")
+    _get_client().table(TABLE).update({
+        "messages": session.messages,
+        "title": session.title,
+        "updated_at": session.updated_at,
+    }).eq("id", session_id).execute()
     return session
 
 
@@ -103,31 +77,45 @@ def update_session_pdf(session_id: str, pdf_session_id: str, filenames: list[str
     session = load_session(session_id)
     if not session:
         return
-    session.session_id = pdf_session_id
-    session.documents = filenames
-    session.updated_at = datetime.now().isoformat()
-    if session.title == "New chat" and filenames:
-        session.title = filenames[0]
-    _save_session(session)
-    logger.info(f"Updated session {session_id} with PDF data: {filenames}")
+    title = filenames[0] if filenames and session.title == "New chat" else session.title
+    _get_client().table(TABLE).update({
+        "session_id": pdf_session_id, "documents": filenames,
+        "title": title, "updated_at": datetime.now().isoformat(),
+    }).eq("id", session_id).execute()
+    logger.info(f"Linked PDF session {pdf_session_id} → chat {session_id}")
 
 
 def delete_session(session_id: str) -> bool:
-    path = os.path.join(CHATS_DIR, f"{session_id}.json")
-    if os.path.exists(path):
-        os.remove(path)
-        doc_path = os.path.join(DOCS_DIR, session_id)
-        if os.path.exists(doc_path):
-            shutil.rmtree(doc_path)
-        logger.info(f"Deleted session: {session_id}")
-        return True
-    return False
+    _get_client().table(TABLE).delete().eq("id", session_id).execute()
+    _get_client().table("faiss_indexes").delete().eq("session_id", session_id).execute()
+    logger.info(f"Deleted session: {session_id}")
+    return True
 
 
 def save_document(chat_session_id: str, filename: str, file_bytes: bytes):
-    doc_dir = os.path.join(DOCS_DIR, chat_session_id)
-    os.makedirs(doc_dir, exist_ok=True)
-    path = os.path.join(doc_dir, filename)
-    with open(path, "wb") as f:
-        f.write(file_bytes)
-    logger.info(f"Saved document: {filename} → {path}")
+    logger.info(f"Document tracked: {filename} for session {chat_session_id}")
+
+
+# ── FAISS persistence ─────────────────────────────────────────────────────
+
+def save_faiss_index(session_id: str, index_bytes: bytes):
+    b64 = base64.b64encode(index_bytes).decode("utf-8")
+    _get_client().table("faiss_indexes").upsert({
+        "session_id": session_id,
+        "index_b64": b64,
+        "updated_at": datetime.now().isoformat(),
+    }).execute()
+    logger.info(f"FAISS index saved: {session_id}")
+
+
+def load_faiss_index(session_id: str) -> Optional[bytes]:
+    res = _get_client().table("faiss_indexes").select("index_b64").eq("session_id", session_id).execute()
+    if not res.data:
+        return None
+    logger.info(f"FAISS index loaded: {session_id}")
+    return base64.b64decode(res.data[0]["index_b64"])
+
+
+def faiss_index_exists(session_id: str) -> bool:
+    res = _get_client().table("faiss_indexes").select("session_id").eq("session_id", session_id).execute()
+    return bool(res.data)
