@@ -1,4 +1,4 @@
-numpy==2.2.4
+numpy>=1.24.0,<2.0.0
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
 python-multipart==0.0.9
@@ -13,7 +13,7 @@ langchain-google-genai==2.0.10
 langchain-community==0.3.20
 
 # RAG / Vector store
-faiss-cpu==1.9.0.post1
+faiss-cpu==1.13.0
 pypdf==4.1.0
 
 # Image generation
