@@ -12,20 +12,24 @@ def _get_embeddings():
     from core.embeddings import get_embeddings
     return get_embeddings()
 
-
 def build_vector_store(session_id: str, files: list[tuple[bytes, str]]):
     from core.chunker import extract_chunks_from_file
-    all_chunks = []
+    from langchain.schema import Document
+    all_docs = []
     for file_bytes, filename in files:
         chunks = extract_chunks_from_file(file_bytes, filename)
-        all_chunks.extend(chunks)
+        for chunk in chunks:
+            all_docs.append(Document(
+                page_content=chunk.text,
+                metadata={"page": chunk.page, "chunk_index": chunk.chunk_index}
+            ))
         logger.debug(f"Chunked {filename}: {len(chunks)} chunks")
 
     embeddings = _get_embeddings()
-    store = FAISS.from_documents(all_chunks, embeddings)
+    store = FAISS.from_documents(all_docs, embeddings)
     index_bytes = _serialize_store(store)
     save_faiss_index(session_id, index_bytes)
-    logger.info(f"Built and persisted FAISS index: {session_id} | {len(all_chunks)} chunks")
+    logger.info(f"Built and persisted FAISS index: {session_id} | {len(all_docs)} docs")
 
 
 def load_vector_store(session_id: str) -> FAISS:
