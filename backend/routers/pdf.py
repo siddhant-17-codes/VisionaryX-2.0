@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form
 from pydantic import BaseModel
 from typing import Optional
 from models.schemas import PDFQueryResponse, ChatMessage
@@ -27,9 +27,10 @@ class PersistentPDFQueryRequest(BaseModel):
 
 
 @router.post("/upload", response_model=UploadResponse)
+@router.post("/upload", response_model=UploadResponse)
 async def upload_files(
     files: list[UploadFile] = File(...),
-    chat_session_id: Optional[str] = None,
+    chat_session_id: Optional[str] = Form(None),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded.")
