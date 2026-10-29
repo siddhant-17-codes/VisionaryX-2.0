@@ -1,6 +1,7 @@
 import google.generativeai as genai
-from config.settings import get_settings
+
 from config.logger import setup_logger
+from config.settings import get_settings
 from core.exceptions import LLMError
 from models.schemas import ChatMessage
 
@@ -23,7 +24,7 @@ def chat(message: str, history: list[ChatMessage]) -> str:
         return response.text
     except Exception as e:
         logger.error(f"Chat failed: {e}")
-        raise LLMError(str(e))
+        raise LLMError(str(e)) from e
 
 
 def query_with_context(question: str, context: str, history: list[ChatMessage]) -> str:
@@ -47,7 +48,7 @@ Answer:"""
         return response.text
     except Exception as e:
         logger.error(f"RAG query failed: {e}")
-        raise LLMError(str(e))
+        raise LLMError(str(e)) from e
 
 
 def suggest_questions(document_summary: str) -> list[str]:
@@ -72,8 +73,9 @@ Document content:
 
 def analyze_image(image_bytes: bytes, prompt: str) -> str:
     try:
-        import PIL.Image
         import io
+
+        import PIL.Image
         logger.debug(f"Image analysis | prompt='{prompt[:50]}...'")
         image = PIL.Image.open(io.BytesIO(image_bytes))
         response = _model.generate_content([prompt, image])
@@ -81,4 +83,4 @@ def analyze_image(image_bytes: bytes, prompt: str) -> str:
         return response.text
     except Exception as e:
         logger.error(f"Image analysis failed: {e}")
-        raise LLMError(str(e))
+        raise LLMError(str(e)) from e

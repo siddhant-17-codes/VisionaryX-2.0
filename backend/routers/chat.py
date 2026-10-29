@@ -1,10 +1,11 @@
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import Optional
-from models.schemas import ChatResponse, ChatMessage
-from services.gemini_service import chat
-from core.storage import append_message
+
 from config.logger import setup_logger
+from core.storage import append_message
+from models.schemas import ChatMessage, ChatResponse
+from services.gemini_service import chat
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 logger = setup_logger("visionaryx.chat_router")
@@ -13,7 +14,7 @@ logger = setup_logger("visionaryx.chat_router")
 class PersistentChatRequest(BaseModel):
     message: str
     history: list = []
-    chat_session_id: Optional[str] = None
+    chat_session_id: str | None = None
 
 
 @router.post("", response_model=ChatResponse)

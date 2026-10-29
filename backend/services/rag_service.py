@@ -1,9 +1,9 @@
 from config.logger import setup_logger
-from core.vector_store import build_vector_store, load_vector_store, session_exists
 from core.chunker import extract_chunks_from_file
-from core.exceptions import SessionNotFoundError, DocumentProcessingError
-from services.gemini_service import query_with_context, suggest_questions
+from core.exceptions import DocumentProcessingError, SessionNotFoundError
+from core.vector_store import build_vector_store, load_vector_store, session_exists
 from models.schemas import ChatMessage, Citation, PDFQueryResponse
+from services.gemini_service import query_with_context, suggest_questions
 
 logger = setup_logger("visionaryx.rag")
 
@@ -36,7 +36,7 @@ def process_files(session_id: str, files: list[tuple[bytes, str]]) -> list[str]:
         return questions
     except Exception as e:
         logger.error(f"File processing failed for session={session_id}: {e}")
-        raise DocumentProcessingError(str(e))
+        raise DocumentProcessingError(str(e)) from e
 
 
 def query_documents(
@@ -79,7 +79,7 @@ def query_documents(
 
     if not context_parts:
         logger.warning("All chunks filtered out — falling back to top 2")
-        for doc, score in docs[:2]:
+        for doc, _score in docs[:2]:
             context_parts.append(doc.page_content)
             page = doc.metadata.get("page", 0)
             if page not in seen_pages:

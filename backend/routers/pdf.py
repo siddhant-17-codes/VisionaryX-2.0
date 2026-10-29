@@ -1,11 +1,12 @@
 import uuid
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
-from typing import Optional
-from models.schemas import PDFQueryResponse, ChatMessage
-from services.rag_service import process_files, query_documents
-from core.storage import update_session_pdf, append_message, save_document
+
 from config.logger import setup_logger
+from core.storage import append_message, save_document, update_session_pdf
+from models.schemas import ChatMessage, PDFQueryResponse
+from services.rag_service import process_files, query_documents
 
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])
 logger = setup_logger("visionaryx.pdf_router")
@@ -23,14 +24,14 @@ class PersistentPDFQueryRequest(BaseModel):
     question: str
     session_id: str
     history: list = []
-    chat_session_id: Optional[str] = None
+    chat_session_id: str | None = None
 
 
 @router.post("/upload", response_model=UploadResponse)
 @router.post("/upload", response_model=UploadResponse)
 async def upload_files(
     files: list[UploadFile] = File(...),
-    chat_session_id: Optional[str] = Form(None),
+    chat_session_id: str | None = Form(None),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded.")

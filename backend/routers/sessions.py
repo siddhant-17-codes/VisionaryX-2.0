@@ -1,13 +1,14 @@
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+
+from config.logger import setup_logger
 from core.storage import (
     create_chat_session,
-    load_session,
-    list_sessions,
     delete_session,
+    list_sessions,
+    load_session,
 )
-from config.logger import setup_logger
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 logger = setup_logger("visionaryx.sessions")
@@ -25,8 +26,8 @@ class SessionResponse(BaseModel):
     created_at: str
     updated_at: str
     messages: list
-    session_id: Optional[str] = None
-    documents: Optional[list] = None
+    session_id: str | None = None
+    documents: list | None = None
 
 
 @router.post("", response_model=SessionResponse)

@@ -1,9 +1,11 @@
 import os
 import pickle
 import tempfile
+
 from langchain_community.vectorstores import FAISS
-from core.storage import save_faiss_index, load_faiss_index, faiss_index_exists
+
 from config.logger import setup_logger
+from core.storage import faiss_index_exists, load_faiss_index, save_faiss_index
 
 logger = setup_logger("visionaryx.vector_store")
 
@@ -13,8 +15,9 @@ def _get_embeddings():
     return get_embeddings()
 
 def build_vector_store(session_id: str, files: list[tuple[bytes, str]]):
-    from core.chunker import extract_chunks_from_file
     from langchain.schema import Document
+
+    from core.chunker import extract_chunks_from_file
     all_docs = []
     for file_bytes, filename in files:
         chunks = extract_chunks_from_file(file_bytes, filename)

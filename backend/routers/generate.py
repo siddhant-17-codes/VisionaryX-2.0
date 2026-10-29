@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from models.schemas import GenerateImageRequest, GenerateImageResponse
 from services.image_service import generate_image
 

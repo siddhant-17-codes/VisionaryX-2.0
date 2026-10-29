@@ -1,5 +1,5 @@
+
 from pydantic import BaseModel
-from typing import Optional
 
 
 class ChatMessage(BaseModel):
@@ -37,7 +37,7 @@ class SuggestedQuestionsResponse(BaseModel):
 
 
 class ImageQueryRequest(BaseModel):
-    prompt: Optional[str] = "Describe this image in detail."
+    prompt: str | None = "Describe this image in detail."
 
 
 class ImageQueryResponse(BaseModel):
