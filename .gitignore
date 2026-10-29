@@ -51,6 +51,7 @@ desktop.ini
 *.bak
 coverage/
 .pytest_cache/
+.ruff_cache/
 .mypy_cache/
 
 # ── Personal files (never commit) ─────────────────────────────────────────
