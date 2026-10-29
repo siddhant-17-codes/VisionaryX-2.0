@@ -52,3 +52,8 @@ desktop.ini
 coverage/
 .pytest_cache/
 .mypy_cache/
+
+# ── Personal files (never commit) ─────────────────────────────────────────
+docs/interview_prep/
+VISIONARYX_INTERVIEW_EVIDENCE.md
+/*.pdf
