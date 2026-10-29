@@ -1,0 +1,28 @@
+name: Keep Supabase alive
+
+# Supabase free-tier projects pause after ~7 days without activity.
+# Hitting /api/sessions makes the backend run a real query against Supabase.
+on:
+  schedule:
+    - cron: "0 6 */3 * *" # every 3 days at 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: GET /api/sessions (with retries for Render cold start)
+        env:
+          URL: https://visionaryx-backend-g44d.onrender.com/api/sessions
+        run: |
+          for attempt in 1 2 3 4; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 180 "$URL" || echo "000")
+            echo "Attempt $attempt: HTTP $status"
+            if [ "$status" = "200" ]; then
+              exit 0
+            fi
+            sleep 45
+          done
+          echo "::error::$URL did not return 200 after 4 attempts"
+          exit 1
