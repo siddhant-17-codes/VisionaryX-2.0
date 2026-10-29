@@ -39,6 +39,15 @@ class ImageGenerationError(VisionaryXError):
         super().__init__(f"Image generation failed: {message}", status_code=502)
 
 
+class ImageQuotaExceededError(VisionaryXError):
+    """Raised when the HuggingFace inference credits are used up (HTTP 402)."""
+    def __init__(self):
+        super().__init__(
+            "Image generation is temporarily unavailable (monthly free quota used up). Try again later.",
+            status_code=503,
+        )
+
+
 class UnsupportedFileTypeError(VisionaryXError):
     """Raised when an unsupported file is uploaded."""
     def __init__(self, filename: str):
