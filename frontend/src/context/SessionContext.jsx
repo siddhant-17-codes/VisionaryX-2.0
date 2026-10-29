@@ -9,7 +9,7 @@ export function SessionProvider({ children }) {
   const [loading, setLoading]             = useState(false);
 
   const refresh = useCallback(async () => {
-    try { const data = await listSessions(); setSessions(data); } catch {}
+    try { const data = await listSessions(); setSessions(data); } catch { /* silent until the cold-start branch surfaces it (R1) */ }
   }, []);
 
   // Refresh on mount and every 30s
