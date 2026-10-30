@@ -43,6 +43,8 @@ class PDFQueryRequest(BaseModel):
 
 
 class Citation(BaseModel):
+    # File the chunk came from. None for indexes built before sources were stored.
+    source: str | None = None
     page: int
     chunk: str
 

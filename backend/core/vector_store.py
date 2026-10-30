@@ -24,7 +24,7 @@ def build_vector_store(session_id: str, owner_id: str, files: list[tuple[bytes, 
         for chunk in chunks:
             all_docs.append(Document(
                 page_content=chunk.text,
-                metadata={"page": chunk.page, "chunk_index": chunk.chunk_index}
+                metadata={"source": filename, "page": chunk.page, "chunk_index": chunk.chunk_index}
             ))
         logger.debug(f"Chunked {filename}: {len(chunks)} chunks")
 
