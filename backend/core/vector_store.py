@@ -14,7 +14,7 @@ def _get_embeddings():
     from core.embeddings import get_embeddings
     return get_embeddings()
 
-def build_vector_store(session_id: str, files: list[tuple[bytes, str]]):
+def build_vector_store(session_id: str, owner_id: str, files: list[tuple[bytes, str]]):
     from langchain.schema import Document
 
     from core.chunker import extract_chunks_from_file
@@ -31,12 +31,12 @@ def build_vector_store(session_id: str, files: list[tuple[bytes, str]]):
     embeddings = _get_embeddings()
     store = FAISS.from_documents(all_docs, embeddings)
     index_bytes = _serialize_store(store)
-    save_faiss_index(session_id, index_bytes)
+    save_faiss_index(session_id, owner_id, index_bytes)
     logger.info(f"Built and persisted FAISS index: {session_id} | {len(all_docs)} docs")
 
 
-def load_vector_store(session_id: str) -> FAISS:
-    index_bytes = load_faiss_index(session_id)
+def load_vector_store(session_id: str, owner_id: str) -> FAISS:
+    index_bytes = load_faiss_index(session_id, owner_id)
     if not index_bytes:
         raise ValueError(f"No FAISS index found for session: {session_id}")
     store = _deserialize_store(index_bytes)
@@ -44,8 +44,8 @@ def load_vector_store(session_id: str) -> FAISS:
     return store
 
 
-def session_exists(session_id: str) -> bool:
-    return faiss_index_exists(session_id)
+def session_exists(session_id: str, owner_id: str) -> bool:
+    return faiss_index_exists(session_id, owner_id)
 
 
 def _serialize_store(store: FAISS) -> bytes:

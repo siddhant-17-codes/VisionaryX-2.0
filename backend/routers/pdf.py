@@ -1,11 +1,12 @@
 import uuid
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from config.logger import setup_logger
-from core.storage import append_message, save_document, update_session_pdf
+from core.storage import append_turn, load_session, save_document, update_session_pdf
 from models.schemas import ChatMessage, PDFQueryResponse
+from routers.deps import owner_id
 from services.rag_service import process_files, query_documents
 
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])
@@ -27,14 +28,21 @@ class PersistentPDFQueryRequest(BaseModel):
     chat_session_id: str | None = None
 
 
+def _require_session(chat_session_id: str | None, owner: str):
+    if chat_session_id and not load_session(chat_session_id, owner):
+        raise HTTPException(status_code=404, detail=f"Session '{chat_session_id}' not found.")
+
+
 @router.post("/upload", response_model=UploadResponse)
 @router.post("/upload", response_model=UploadResponse)
 async def upload_files(
     files: list[UploadFile] = File(...),
     chat_session_id: str | None = Form(None),
+    owner: str = Depends(owner_id),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded.")
+    _require_session(chat_session_id, owner)
 
     session_id = str(uuid.uuid4())
     file_data = []
@@ -54,10 +62,10 @@ async def upload_files(
         if chat_session_id:
             save_document(chat_session_id, f.filename, file_bytes)
 
-    questions = process_files(session_id, file_data)
+    questions = process_files(session_id, owner, file_data)
 
     if chat_session_id:
-        update_session_pdf(chat_session_id, session_id, filenames)
+        update_session_pdf(chat_session_id, owner, session_id, filenames)
         logger.info(f"Linked PDF session {session_id} to chat session {chat_session_id}")
 
     return UploadResponse(
@@ -68,13 +76,13 @@ async def upload_files(
 
 
 @router.post("/query", response_model=PDFQueryResponse)
-async def query_pdf(request: PersistentPDFQueryRequest):
+async def query_pdf(request: PersistentPDFQueryRequest, owner: str = Depends(owner_id)):
+    _require_session(request.chat_session_id, owner)
     history = [ChatMessage(**m) if isinstance(m, dict) else m for m in request.history]
-    result = query_documents(request.session_id, request.question, history)
+    result = query_documents(request.session_id, owner, request.question, history)
 
     if request.chat_session_id:
-        append_message(request.chat_session_id, "user", request.question)
-        append_message(request.chat_session_id, "assistant", result.answer)
+        append_turn(request.chat_session_id, owner, request.question, result.answer)
         logger.debug(f"Persisted PDF Q&A to session: {request.chat_session_id}")
 
     return result

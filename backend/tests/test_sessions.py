@@ -1,5 +1,7 @@
 import pytest
 
+from tests.conftest import STRANGER
+
 
 def test_health(client):
     res = client.get("/health")
@@ -36,19 +38,45 @@ def test_delete_session(client):
     assert client.get(f"/api/sessions/{sid}").status_code == 404
 
 
-@pytest.mark.xfail(strict=True, reason="F4: fixed in fix/session-ownership")
 def test_delete_unknown_session_returns_404(client):
     assert client.delete("/api/sessions/does-not-exist").status_code == 404
 
 
-@pytest.mark.xfail(strict=True, reason="F4: fixed in fix/session-ownership")
 def test_list_reports_message_count(client):
     sid = client.post("/api/sessions", json={"mode": "chat"}).json()["id"]
     client.post("/api/chat", json={"message": "hi", "chat_session_id": sid})
     assert client.get("/api/sessions").json()[0]["message_count"] == 2
 
 
-@pytest.mark.xfail(strict=True, reason="S1: fixed in fix/session-ownership")
 def test_sessions_are_private_to_their_owner(client):
     client.post("/api/sessions", json={"mode": "chat"}, headers={"X-Client-Id": "a" * 32})
     assert client.get("/api/sessions", headers={"X-Client-Id": "b" * 32}).json() == []
+
+
+@pytest.mark.parametrize("headers", [{"X-Client-Id": ""}, {"X-Client-Id": "short"}, {"X-Client-Id": "bad id!" * 4}])
+def test_missing_or_malformed_client_id_is_rejected(client, headers):
+    assert client.get("/api/sessions", headers=headers).status_code == 400
+
+
+def test_stranger_gets_404_not_403(client):
+    """Someone else's session looks exactly like one that does not exist."""
+    sid = client.post("/api/sessions", json={"mode": "chat"}).json()["id"]
+    assert client.get(f"/api/sessions/{sid}", headers=STRANGER).status_code == 404
+    assert client.delete(f"/api/sessions/{sid}", headers=STRANGER).status_code == 404
+    assert client.get(f"/api/sessions/{sid}").status_code == 200
+
+
+def test_stored_owner_id_cannot_be_replayed_as_a_client_id(client, supabase):
+    """Someone who reads owner_id out of the database still cannot act as that owner."""
+    sid = client.post("/api/sessions", json={"mode": "chat"}).json()["id"]
+    leaked = {"X-Client-Id": supabase.db["sessions"][0]["owner_id"]}
+    assert client.get(f"/api/sessions/{sid}", headers=leaked).status_code == 404
+    assert client.get("/api/sessions", headers=leaked).json() == []
+
+
+def test_stranger_cannot_write_into_someone_elses_chat(client, gemini):
+    sid = client.post("/api/sessions", json={"mode": "chat"}).json()["id"]
+    res = client.post("/api/chat", headers=STRANGER, json={"message": "hi", "chat_session_id": sid})
+    assert res.status_code == 404
+    assert gemini.prompts == []  # rejected before spending model quota
+    assert client.get(f"/api/sessions/{sid}").json()["messages"] == []

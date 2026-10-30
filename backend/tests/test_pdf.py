@@ -1,6 +1,6 @@
 import pytest
 
-from tests.conftest import fixture_bytes
+from tests.conftest import OWNER, OWNER_HASH, STRANGER, fixture_bytes
 
 PDF = "application/pdf"
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -57,7 +57,7 @@ def test_index_survives_restart(client, uploaded_pdf):
     """The index lives in Supabase, so a fresh process can load and query it."""
     from core.vector_store import load_vector_store
 
-    store = load_vector_store(uploaded_pdf.session_id)
+    store = load_vector_store(uploaded_pdf.session_id, OWNER_HASH)
     assert store.similarity_search("harvest", k=1)
 
 
@@ -84,10 +84,33 @@ def test_upload_scanned_pdf_explains_no_text(client):
     assert "scanned" in res.json()["error"]
 
 
-@pytest.mark.xfail(strict=True, reason="F3: fixed in fix/session-ownership")
 def test_deleting_session_deletes_its_index(client, uploaded_pdf, supabase):
     client.delete(f"/api/sessions/{uploaded_pdf.chat_id}")
     assert supabase.db["faiss_indexes"] == []
+
+
+def test_index_and_session_store_only_the_hashed_owner(uploaded_pdf, supabase):
+    assert [row["owner_id"] for row in supabase.db["faiss_indexes"]] == [OWNER_HASH]
+    assert [row["owner_id"] for row in supabase.db["sessions"]] == [OWNER_HASH]
+    assert OWNER not in repr(supabase.db)  # the raw X-Client-Id never reaches the database
+
+
+def test_stranger_cannot_query_someone_elses_index(client, uploaded_pdf, gemini):
+    calls_before = len(gemini.prompts)
+    res = client.post("/api/pdf/query", headers=STRANGER,
+                      json={"session_id": uploaded_pdf.session_id, "question": "harvest"})
+    assert res.status_code == 404
+    assert len(gemini.prompts) == calls_before
+
+
+def test_stranger_cannot_upload_into_someone_elses_session(client, uploaded_pdf):
+    res = client.post(
+        "/api/pdf/upload", headers=STRANGER,
+        files=[("files", ("lumen_ridge_report.pdf", fixture_bytes("lumen_ridge_report.pdf"), PDF))],
+        data={"chat_session_id": uploaded_pdf.chat_id},
+    )
+    assert res.status_code == 404
+    assert client.get(f"/api/sessions/{uploaded_pdf.chat_id}").json()["session_id"] == uploaded_pdf.session_id
 
 
 @pytest.mark.xfail(strict=True, reason="F2: fixed in fix/citation-sources")
