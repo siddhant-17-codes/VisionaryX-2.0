@@ -18,8 +18,14 @@ export default function CitationCard({ citation, index }) {
         >
           {index + 1}
         </div>
-        <span className="text-[9px] font-semibold" style={{ color }}>
-          Page {citation.page}
+        {/* Answers from indexes built before sources were stored have no file name. */}
+        {citation.source && (
+          <span className="text-[9px] font-semibold text-muted truncate min-w-0" title={citation.source}>
+            {citation.source}
+          </span>
+        )}
+        <span className="text-[9px] font-semibold flex-shrink-0" style={{ color }}>
+          {citation.source ? `· p. ${citation.page}` : `Page ${citation.page}`}
         </span>
       </div>
       <p className="text-[10px] text-hint leading-relaxed line-clamp-3">{citation.chunk}</p>
