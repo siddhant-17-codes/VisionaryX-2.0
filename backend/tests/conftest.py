@@ -26,6 +26,7 @@ class FakeQuery:
         self.rows = db.setdefault(table, [])
         self.pk = PRIMARY_KEYS.get(table, "id")
         self.op, self.payload, self.cols, self.order_by = "select", None, "*", None
+        self.max_rows = None
         self.filters: list[tuple[str, object]] = []
 
     def select(self, cols="*"):
@@ -56,6 +57,10 @@ class FakeQuery:
         self.order_by = (col, desc)
         return self
 
+    def limit(self, n):
+        self.max_rows = n
+        return self
+
     def execute(self):
         matched = [r for r in self.rows if all(r.get(c) == v for c, v in self.filters)]
         if self.op == "select":
@@ -65,7 +70,7 @@ class FakeQuery:
             if self.cols != "*":
                 keep = [c.strip() for c in self.cols.split(",")]
                 out = [{k: r.get(k) for k in keep} for r in out]
-            return SimpleNamespace(data=out)
+            return SimpleNamespace(data=out[:self.max_rows])
         if self.op == "insert":
             self.rows.append(copy.deepcopy(self.payload))
             return SimpleNamespace(data=[self.payload])

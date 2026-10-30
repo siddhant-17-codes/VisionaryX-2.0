@@ -9,6 +9,23 @@ def test_health(client):
     assert res.json()["status"] == "ok"
 
 
+def test_health_db_runs_a_query_without_a_client_id(client, supabase):
+    res = client.get("/health/db", headers={"X-Client-Id": ""})
+    assert res.status_code == 200
+    assert res.json() == {"status": "ok", "database": "ok"}
+
+
+def test_health_db_reports_503_without_leaking_details(client, monkeypatch):
+    import core.storage
+
+    def broken():
+        raise RuntimeError("Unregistered API key sb_secret_xyz")
+    monkeypatch.setattr(core.storage, "_get_client", broken)
+    res = client.get("/health/db")
+    assert res.status_code == 503
+    assert res.json() == {"status": "error", "database": "unreachable"}
+
+
 def test_create_and_get_session(client):
     created = client.post("/api/sessions", json={"mode": "chat"}).json()
     assert created["mode"] == "chat"

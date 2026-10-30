@@ -113,6 +113,11 @@ def delete_session(session_id: str, owner_id: str) -> bool:
     return True
 
 
+def ping_database():
+    """Smallest real query: proves the key works and counts as Supabase activity."""
+    _get_client().table(TABLE).select("id").limit(1).execute()
+
+
 def save_document(chat_session_id: str, filename: str, file_bytes: bytes):
     logger.info(f"Document tracked: {filename} for session {chat_session_id}")
 
