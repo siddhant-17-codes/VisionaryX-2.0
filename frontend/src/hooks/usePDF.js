@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadPDFs, queryPDF } from "../api/pdf";
 import { createSession, getSession } from "../api/sessions";
+import { isNotFound, notifyError } from "../utils/notify";
 
 const STORAGE_KEY = "vx_active_pdf_session";
 
@@ -28,7 +29,9 @@ export function usePDF(restoreSessionId = null) {
         setMessages(session.messages || []);
         setUploadedFiles(session.documents || []);
         if (session.session_id) { setIndexed(true); localStorage.setItem(STORAGE_KEY, session.id); }
-      } catch { /* silent until the cold-start branch surfaces it (R1) */ }
+      } catch (e) {
+        if (!isNotFound(e)) notifyError(e, "Couldn't load your last document chat.", "session-restore");
+      }
     };
     init();
   }, [restoreSessionId]);
