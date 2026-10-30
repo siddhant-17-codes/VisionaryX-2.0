@@ -1,10 +1,7 @@
-import os
-import pickle
-import tempfile
-
 from langchain_community.vectorstores import FAISS
 
 from config.logger import setup_logger
+from core import faiss_codec
 from core.chunker import Chunk
 from core.storage import faiss_index_exists, load_faiss_index, save_faiss_index
 
@@ -50,24 +47,8 @@ def session_exists(session_id: str, owner_id: str) -> bool:
 
 
 def _serialize_store(store: FAISS) -> bytes:
-    with tempfile.TemporaryDirectory() as tmp:
-        store.save_local(tmp)
-        with open(os.path.join(tmp, "index.faiss"), "rb") as f:
-            idx_bytes = f.read()
-        with open(os.path.join(tmp, "index.pkl"), "rb") as f:
-            pkl_bytes = f.read()
-    return pickle.dumps({"idx": idx_bytes, "pkl": pkl_bytes})
+    return faiss_codec.dumps(store)
 
 
 def _deserialize_store(data: bytes) -> FAISS:
-    payload = pickle.loads(data)
-    embeddings = _get_embeddings()
-    with tempfile.TemporaryDirectory() as tmp:
-        with open(os.path.join(tmp, "index.faiss"), "wb") as f:
-            f.write(payload["idx"])
-        with open(os.path.join(tmp, "index.pkl"), "wb") as f:
-            f.write(payload["pkl"])
-        store = FAISS.load_local(
-            tmp, embeddings, allow_dangerous_deserialization=True
-        )
-    return store
+    return faiss_codec.loads(data, _get_embeddings())
