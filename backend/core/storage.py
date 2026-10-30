@@ -4,14 +4,22 @@ import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime
 
-from supabase import Client, create_client
+from postgrest import SyncPostgrestClient
+from postgrest.constants import DEFAULT_POSTGREST_CLIENT_HEADERS
 
 from config.logger import setup_logger
 
 logger = setup_logger("visionaryx.storage")
 
-def _get_client() -> Client:
-    return create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_KEY"])
+def _get_client() -> SyncPostgrestClient:
+    """Supabase's REST API, called directly because supabase-py 2.7 rejects the new
+    sb_secret_ keys and always sends the key as a Bearer token. New keys must go in
+    the apikey header only; legacy JWT keys also go in Authorization, as before."""
+    key = os.environ["SUPABASE_SERVICE_KEY"]
+    headers = {**DEFAULT_POSTGREST_CLIENT_HEADERS, "apikey": key}
+    if not key.startswith("sb_"):
+        headers["Authorization"] = f"Bearer {key}"
+    return SyncPostgrestClient(f"{os.environ['SUPABASE_URL']}/rest/v1", headers=headers)
 
 TABLE = "sessions"
 
