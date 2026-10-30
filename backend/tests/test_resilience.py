@@ -2,12 +2,10 @@
 validation and timeouts (R5)."""
 import httpx
 import pytest
-from google.api_core.exceptions import DeadlineExceeded, InvalidArgument, NotFound, ResourceExhausted
-from langchain_google_genai._common import GoogleGenerativeAIError
 from starlette.requests import Request
 
 from models.schemas import MAX_MESSAGE_CHARS
-from tests.conftest import FakeGemini, fixture_bytes
+from tests.conftest import FakeGemini, api_error, fixture_bytes
 
 PDF = "application/pdf"
 
@@ -20,7 +18,7 @@ def chat(client, message="Hello", **kwargs):
 
 def test_quota_on_primary_falls_back_to_next_model(client, use_chain):
     primary, fallback = FakeGemini(), FakeGemini(answer="from the lite model")
-    primary.error = ResourceExhausted("quota")
+    primary.error = api_error(429, "RESOURCE_EXHAUSTED", "quota")
     use_chain(primary, fallback)
 
     res = chat(client)
@@ -31,14 +29,14 @@ def test_quota_on_primary_falls_back_to_next_model(client, use_chain):
 
 def test_retired_model_falls_back(client, use_chain):
     primary, fallback = FakeGemini(), FakeGemini(answer="ok")
-    primary.error = NotFound("models/gemini-x is not found")
+    primary.error = api_error(404, "NOT_FOUND", "models/gemini-x is not found")
     use_chain(primary, fallback)
     assert chat(client).json()["reply"] == "ok"
 
 
 def test_bad_request_does_not_burn_the_fallbacks(client, use_chain):
     primary, fallback = FakeGemini(), FakeGemini()
-    primary.error = InvalidArgument("contents must not be empty")
+    primary.error = api_error(400, "INVALID_ARGUMENT", "contents must not be empty")
     use_chain(primary, fallback)
 
     res = chat(client)
@@ -46,9 +44,27 @@ def test_bad_request_does_not_burn_the_fallbacks(client, use_chain):
     assert fallback.prompts == []
 
 
-def test_every_call_has_a_timeout_and_no_sdk_retries(client, gemini):
-    chat(client)
-    assert gemini.request_options[-1] == {"timeout": 30, "retry": None}
+def test_overloaded_or_timed_out_model_falls_back(client, use_chain):
+    for error in (api_error(503, "UNAVAILABLE"), httpx.ReadTimeout("slow")):
+        primary, fallback = FakeGemini(), FakeGemini(answer="ok")
+        primary.error = error
+        use_chain(primary, fallback)
+        assert chat(client).json()["reply"] == "ok"
+
+
+def test_every_call_has_a_timeout_and_no_sdk_retries():
+    from core.genai_client import HTTP_OPTIONS, get_client
+    assert HTTP_OPTIONS.timeout == 30_000  # milliseconds
+    assert HTTP_OPTIONS.retry_options.attempts == 1
+    assert get_client()._api_client._http_options.timeout == 30_000
+
+
+def test_blocked_response_with_no_text_is_an_error_not_an_empty_answer(client, gemini, monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr(gemini, "generate_content", lambda *a, **k: SimpleNamespace(text=None))
+    res = chat(client)
+    assert res.status_code == 502
+    assert res.json()["type"] == "LLMError"
 
 
 # ── R2: typed errors ─────────────────────────────────────────────────────────
@@ -56,7 +72,7 @@ def test_every_call_has_a_timeout_and_no_sdk_retries(client, gemini):
 def test_all_models_out_of_quota_returns_typed_429(client, use_chain):
     fakes = [FakeGemini(), FakeGemini()]
     for fake in fakes:
-        fake.error = ResourceExhausted("Quota exceeded for metric generate_requests_per_day")
+        fake.error = api_error(429, "RESOURCE_EXHAUSTED", "Quota exceeded for metric generate_requests_per_day")
     use_chain(*fakes)
 
     res = chat(client)
@@ -66,7 +82,7 @@ def test_all_models_out_of_quota_returns_typed_429(client, use_chain):
 
 
 def test_all_models_timing_out_returns_504(client, gemini):
-    gemini.error = DeadlineExceeded("deadline")
+    gemini.error = httpx.ReadTimeout("deadline")
     res = chat(client)
     assert res.status_code == 504
     assert res.json()["type"] == "UpstreamTimeoutError"
@@ -81,7 +97,8 @@ def test_unknown_model_error_hides_upstream_text(client, gemini):
 
 
 def _embedding_quota(*_args, **_kwargs):
-    raise GoogleGenerativeAIError("Error embedding content: 429") from ResourceExhausted("quota")
+    # Wrapped once, as LangChain/FAISS may do: the 429 is found through __cause__.
+    raise RuntimeError("Error embedding content") from api_error(429, "RESOURCE_EXHAUSTED", "quota")
 
 
 def test_embedding_quota_on_upload_is_a_429_not_a_bad_document(client, monkeypatch):

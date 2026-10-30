@@ -16,9 +16,21 @@ def test_image_query_sends_prompt_and_image(client, gemini):
     )
     assert res.status_code == 200
     assert res.json()["answer"] == gemini.answer
-    prompt, image = gemini.prompts[-1]
+    part, prompt = gemini.contents[-1]
     assert prompt == "How many bars?"
-    assert image.size == (640, 400)
+    assert part.inline_data.mime_type == "image/png"
+    assert part.inline_data.data == fixture_bytes("bars.png")  # sent unchanged
+
+
+def test_image_query_converts_formats_gemini_does_not_accept(client, gemini):
+    gif = io.BytesIO()
+    Image.new("RGB", (32, 16), "red").save(gif, format="GIF")
+    res = client.post("/api/image/query", files={"file": ("x.gif", gif.getvalue(), "image/gif")},
+                      data={"prompt": "Colour?"})
+    assert res.status_code == 200
+    part, _ = gemini.contents[-1]
+    assert part.inline_data.mime_type == "image/png"
+    assert Image.open(io.BytesIO(part.inline_data.data)).size == (32, 16)
 
 
 def test_image_query_rejects_non_image(client):

@@ -10,6 +10,7 @@ annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
     # via
+    #   google-genai
     #   httpx
     #   httpx2
     #   starlette
@@ -41,56 +42,26 @@ dataclasses-json==0.6.7
     # via langchain-community
 deprecation==2.1.0
     # via postgrest
+distro==1.9.0
+    # via google-genai
 faiss-cpu==1.13.0
     # via -r requirements.in
-fastapi==0.110.0
+fastapi==0.115.6
     # via -r requirements.in
 filelock==4.2.4
     # via huggingface-hub
-filetype==1.2.0
-    # via langchain-google-genai
 frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
 fsspec==2026.9.0
     # via huggingface-hub
-google-ai-generativelanguage==0.6.10
-    # via google-generativeai
-google-api-core==2.25.2
-    # via
-    #   google-ai-generativelanguage
-    #   google-api-python-client
-    #   google-generativeai
-google-api-python-client==2.201.0
-    # via google-generativeai
 google-auth==2.62.0
-    # via
-    #   google-ai-generativelanguage
-    #   google-api-core
-    #   google-api-python-client
-    #   google-auth-httplib2
-    #   google-generativeai
-google-auth-httplib2==0.4.4
-    # via google-api-python-client
-google-generativeai==0.8.3
-    # via
-    #   -r requirements.in
-    #   langchain-google-genai
-googleapis-common-protos==1.75.0
-    # via
-    #   google-api-core
-    #   grpcio-status
-gotrue==2.12.4
-    # via supabase
+    # via google-genai
+google-genai==2.8.0
+    # via -r requirements.in
 greenlet==3.5.6 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
     # via sqlalchemy
-grpcio==1.85.0
-    # via
-    #   google-api-core
-    #   grpcio-status
-grpcio-status==1.71.2
-    # via google-api-core
 h11==0.16.0
     # via
     #   httpcore
@@ -106,20 +77,13 @@ httpcore==1.0.9
     # via httpx
 httpcore2==2.16.0 ; sys_platform != 'emscripten'
     # via httpx2
-httplib2==0.32.1
-    # via
-    #   google-api-python-client
-    #   google-auth-httplib2
 httptools==0.9.0
     # via uvicorn
-httpx==0.27.2
+httpx==0.28.1
     # via
-    #   gotrue
+    #   google-genai
     #   langsmith
     #   postgrest
-    #   storage3
-    #   supabase
-    #   supafunc
 httpx-sse==0.4.3
     # via langchain-community
 httpx2==2.16.0
@@ -151,10 +115,7 @@ langchain-core==0.3.86
     # via
     #   langchain
     #   langchain-community
-    #   langchain-google-genai
     #   langchain-text-splitters
-langchain-google-genai==2.0.10
-    # via -r requirements.in
 langchain-text-splitters==0.3.11
     # via langchain
 langsmith==0.3.45
@@ -188,24 +149,12 @@ packaging==25.0
     #   marshmallow
 pillow==11.1.0
     # via -r requirements.in
-postgrest==0.16.11
-    # via supabase
+postgrest==2.33.0
+    # via -r requirements.in
 propcache==0.5.4
     # via
     #   aiohttp
     #   yarl
-proto-plus==1.28.2
-    # via
-    #   google-ai-generativelanguage
-    #   google-api-core
-protobuf==5.29.6
-    # via
-    #   google-ai-generativelanguage
-    #   google-api-core
-    #   google-generativeai
-    #   googleapis-common-protos
-    #   grpcio-status
-    #   proto-plus
 pyasn1==0.6.5
     # via pyasn1-modules
 pyasn1-modules==0.4.2
@@ -216,11 +165,9 @@ pydantic==2.9.2
     # via
     #   -r requirements.in
     #   fastapi
-    #   google-generativeai
-    #   gotrue
+    #   google-genai
     #   langchain
     #   langchain-core
-    #   langchain-google-genai
     #   langsmith
     #   postgrest
     #   pydantic-settings
@@ -230,14 +177,8 @@ pydantic-settings==2.6.1
     # via
     #   -r requirements.in
     #   langchain-community
-pyjwt==2.15.1
-    # via gotrue
-pyparsing==3.3.3
-    # via httplib2
 pypdf==4.1.0
     # via -r requirements.in
-python-dateutil==2.8.2
-    # via storage3
 python-docx==1.1.2
     # via -r requirements.in
 python-dotenv==1.0.1
@@ -253,43 +194,31 @@ pyyaml==6.0.2
     #   langchain-community
     #   langchain-core
     #   uvicorn
-realtime==2.5.3
-    # via supabase
 requests==2.31.0
     # via
-    #   google-api-core
+    #   google-auth
+    #   google-genai
     #   langchain
     #   langchain-community
     #   langsmith
     #   requests-toolbelt
 requests-toolbelt==1.0.0
     # via langsmith
-six==1.16.0
-    # via python-dateutil
 sniffio==1.3.1
-    # via httpx
+    # via google-genai
 sqlalchemy==2.0.0
     # via
     #   langchain
     #   langchain-community
-starlette==0.36.3
+starlette==0.41.3
     # via fastapi
-storage3==0.7.7
-    # via supabase
-strenum==0.4.15
-    # via postgrest
-supabase==2.7.4
-    # via -r requirements.in
-supafunc==0.5.1
-    # via supabase
-tenacity==9.2.1
+tenacity==9.1.4
     # via
+    #   google-genai
     #   langchain-community
     #   langchain-core
 tqdm==4.70.1
-    # via
-    #   google-generativeai
-    #   huggingface-hub
+    # via huggingface-hub
 truststore==0.10.5 ; sys_platform != 'emscripten'
     # via
     #   httpcore2
@@ -300,22 +229,17 @@ typing-extensions==4.16.0
     #   aiosignal
     #   anyio
     #   fastapi
-    #   google-generativeai
-    #   grpcio
+    #   google-genai
     #   httpx2
     #   huggingface-hub
     #   langchain-core
     #   pydantic
     #   pydantic-core
     #   python-docx
-    #   realtime
     #   sqlalchemy
-    #   storage3
     #   typing-inspect
 typing-inspect==0.9.0
     # via dataclasses-json
-uritemplate==4.2.0
-    # via google-api-python-client
 urllib3==2.8.0
     # via requests
 uuid-utils==0.19.0
@@ -326,11 +250,13 @@ uvloop==0.23.0 ; platform_python_implementation != 'PyPy' and sys_platform != 'c
     # via uvicorn
 watchfiles==1.3.0
     # via uvicorn
-websockets==15.0.1
+websockets==14.2
     # via
-    #   realtime
+    #   google-genai
     #   uvicorn
 yarl==1.25.1
-    # via aiohttp
+    # via
+    #   aiohttp
+    #   postgrest
 zstandard==0.23.0
     # via langsmith

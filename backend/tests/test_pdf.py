@@ -31,8 +31,9 @@ def test_query_answers_with_page_citations(client, uploaded_pdf, gemini):
     assert body["answer"] == gemini.answer
     assert body["citations"], "expected at least one citation"
     assert all(1 <= c["page"] <= 4 for c in body["citations"])
-    # Retrieved document text reaches the model as context.
+    # Retrieved document text reaches the model as context, with the rules as a system instruction.
     assert "Lumen" in gemini.prompts[-1] or "tonnes" in gemini.prompts[-1] or "credits" in gemini.prompts[-1]
+    assert "Answer ONLY from the provided context" in gemini.configs[-1].system_instruction
 
 
 def test_query_persists_to_chat_session(client, uploaded_pdf):

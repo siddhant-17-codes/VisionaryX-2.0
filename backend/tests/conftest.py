@@ -98,23 +98,48 @@ class FakeSupabase:
 
 # ── Gemini ───────────────────────────────────────────────────────────────────
 
+def flatten(contents) -> str:
+    """The text a model would see, one line per turn ("user: ...", "model: ...")."""
+    if isinstance(contents, str):
+        return contents
+    lines = []
+    for item in contents:
+        if isinstance(item, str):
+            lines.append(item)
+        elif getattr(item, "role", None):
+            lines.append(f"{item.role}: " + " ".join(p.text for p in item.parts if p.text))
+        elif getattr(item, "text", None):
+            lines.append(item.text)
+    return "\n".join(lines)
+
+
 class FakeGemini:
-    """Stands in for the GenerativeModel. Records every prompt it receives."""
+    """Stands in for one model in the chain. `prompts` holds the flattened text of
+    every request; `contents` and `configs` hold what was actually passed."""
 
     def __init__(self, answer: str = "Fake answer from the model."):
-        self.prompts: list = []
-        self.request_options: list = []
+        self.prompts: list[str] = []
+        self.contents: list = []
+        self.configs: list = []
         self.error: Exception | None = None
         self.answer = answer
 
-    def generate_content(self, prompt, request_options=None):
-        self.prompts.append(prompt)
-        self.request_options.append(request_options)
+    def generate_content(self, contents, config=None):
+        self.prompts.append(flatten(contents))
+        self.contents.append(contents)
+        self.configs.append(config)
         if self.error:
             raise self.error
-        if isinstance(prompt, str) and "3 questions:" in prompt:
+        if "3 questions:" in self.prompts[-1]:
             return SimpleNamespace(text="What is A?\nWhat is B?\nWhat is C?")
         return SimpleNamespace(text=self.answer)
+
+
+def api_error(code: int, status: str = "ERROR", message: str = "upstream message"):
+    """A google-genai APIError as the SDK raises it for an HTTP error response."""
+    from google.genai import errors
+    body = {"error": {"code": code, "message": message, "status": status}}
+    return (errors.ClientError if code < 500 else errors.ServerError)(code, body)
 
 
 # ── Hugging Face ─────────────────────────────────────────────────────────────
