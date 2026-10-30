@@ -17,7 +17,8 @@ class Settings(BaseSettings):
 
     @property
     def origins_list(self) -> list[str]:
-        return [o.strip() for o in self.allowed_origins.split(",")]
+        # Browsers send the origin without a trailing slash, so "https://x.app/" would never match.
+        return [o.strip().rstrip("/") for o in self.allowed_origins.split(",") if o.strip()]
 
     @property
     def gemini_model_list(self) -> list[str]:
