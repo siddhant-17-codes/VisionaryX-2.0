@@ -60,6 +60,8 @@ def test_client_is_reused_and_has_a_timeout(monkeypatch):
 
 
 def test_timestamps_are_utc_and_still_sort_after_older_naive_rows():
+    from datetime import UTC, datetime, timedelta
+    older_naive_row = (datetime.now(UTC) - timedelta(seconds=1)).replace(tzinfo=None).isoformat()
     now = storage._now()
     assert now.endswith("+00:00") and len(now) == len("2026-10-30T21:00:00.000000+00:00")
-    assert "2026-10-30T20:59:59.999999" < now  # an older row written before this change
+    assert older_naive_row < now
