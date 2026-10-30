@@ -11,7 +11,9 @@ export default function Layout({ children, showSidebar = true }) {
   if (!showSidebar) return <>{children}</>;
 
   return (
-    <div className="flex min-h-screen bg-base">
+    // Exactly the visible height (dvh excludes mobile browser bars; h-screen is the
+    // fallback). Only the content area below scrolls, so the menu bar stays put.
+    <div className="flex h-screen h-dvh overflow-hidden bg-base">
 
       {/* Mobile overlay backdrop */}
       {sidebarOpen && (
@@ -23,16 +25,16 @@ export default function Layout({ children, showSidebar = true }) {
 
       {/* Sidebar */}
       <div className={`
-        fixed md:sticky top-0 z-30 h-screen transition-transform duration-300 ease-in-out
+        fixed md:static top-0 z-30 h-screen h-dvh transition-transform duration-300 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto min-w-0 w-full">
+      <main className="flex-1 min-w-0 w-full flex flex-col">
         {/* Mobile topbar */}
-        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-base sticky top-0 z-10">
+        <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-base flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-muted hover:text-linen transition-colors bg-transparent border-none cursor-pointer p-1"
@@ -49,7 +51,9 @@ export default function Layout({ children, showSidebar = true }) {
           </div>
         </div>
         <ServerStatusBanner />
-        {children}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {children}
+        </div>
       </main>
 
     </div>

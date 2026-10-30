@@ -38,7 +38,7 @@ export default function Sidebar({ onClose }) {
   };
 
   return (
-    <aside className="w-[210px] bg-base border-r border-border flex flex-col h-screen flex-shrink-0">
+    <aside className="w-[210px] bg-base border-r border-border flex flex-col h-full flex-shrink-0">
 
       {/* Brand */}
       <div className="px-4 py-4 border-b border-border">
