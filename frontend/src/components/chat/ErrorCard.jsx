@@ -8,6 +8,9 @@ export default function ErrorCard({ error, onRetry }) {
     quota:     { bg: "#1A0A04", border: "#3A1808", color: "#FEA735", symbol: "⚠" },
     ratelimit: { bg: "#1A0A04", border: "#3A1808", color: "#FEA735", symbol: "⏱" },
     network:   { bg: "#0A1020", border: "#1C2A40", color: "#00C3FF", symbol: "⚡" },
+    timeout:   { bg: "#0A1020", border: "#1C2A40", color: "#00C3FF", symbol: "⏱" },
+    unavailable: { bg: "#1A0A04", border: "#3A1808", color: "#FEA735", symbol: "⚠" },
+    request:   { bg: "#1A0A04", border: "#3A1808", color: "#FEA735", symbol: "!" },
     server:    { bg: "#1A0A04", border: "#3A1808", color: "#FE7235", symbol: "✕" },
     unknown:   { bg: "#100D1A", border: "#2A2040", color: "#6B5E7A", symbol: "?" },
   };
