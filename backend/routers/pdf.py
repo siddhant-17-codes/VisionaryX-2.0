@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from config.logger import setup_logger
+from core.exceptions import FileTooLargeError
+from core.rate_limit import gemini_limit, upload_limit
 from core.storage import append_turn, load_session, save_document, update_session_pdf
-from models.schemas import ChatMessage, PDFQueryResponse
-from routers.deps import owner_id
+from models.schemas import History, PDFQueryResponse, SessionRef, UserText
+from routers.deps import MAX_DOCUMENT_BYTES, MAX_DOCUMENTS, owner_id, read_capped
 from services.rag_service import process_files, query_documents
 
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])
@@ -22,10 +24,10 @@ class UploadResponse(BaseModel):
 
 
 class PersistentPDFQueryRequest(BaseModel):
-    question: str
-    session_id: str
-    history: list = []
-    chat_session_id: str | None = None
+    question: UserText
+    session_id: SessionRef
+    history: History = []
+    chat_session_id: SessionRef | None = None
 
 
 def _require_session(chat_session_id: str | None, owner: str):
@@ -36,12 +38,15 @@ def _require_session(chat_session_id: str | None, owner: str):
 @router.post("/upload", response_model=UploadResponse)
 @router.post("/upload", response_model=UploadResponse)
 async def upload_files(
+    _: None = Depends(upload_limit),
     files: list[UploadFile] = File(...),
-    chat_session_id: str | None = Form(None),
+    chat_session_id: str | None = Form(None, max_length=64),
     owner: str = Depends(owner_id),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded.")
+    if len(files) > MAX_DOCUMENTS:
+        raise FileTooLargeError(f"Upload at most {MAX_DOCUMENTS} files at a time.")
     _require_session(chat_session_id, owner)
 
     session_id = str(uuid.uuid4())
@@ -55,7 +60,7 @@ async def upload_files(
                 status_code=400,
                 detail=f"Unsupported file: {f.filename}. Upload PDF or DOCX only."
             )
-        file_bytes = await f.read()
+        file_bytes = await read_capped(f, MAX_DOCUMENT_BYTES)
         file_data.append((file_bytes, f.filename))
         filenames.append(f.filename)
 
@@ -75,11 +80,10 @@ async def upload_files(
     )
 
 
-@router.post("/query", response_model=PDFQueryResponse)
+@router.post("/query", response_model=PDFQueryResponse, dependencies=[Depends(gemini_limit)])
 async def query_pdf(request: PersistentPDFQueryRequest, owner: str = Depends(owner_id)):
     _require_session(request.chat_session_id, owner)
-    history = [ChatMessage(**m) if isinstance(m, dict) else m for m in request.history]
-    result = query_documents(request.session_id, owner, request.question, history)
+    result = query_documents(request.session_id, owner, request.question, request.history)
 
     if request.chat_session_id:
         append_turn(request.chat_session_id, owner, request.question, result.answer)

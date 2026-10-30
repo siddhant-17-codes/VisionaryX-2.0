@@ -158,6 +158,13 @@ def use_chain(monkeypatch, gemini):
 
 
 @pytest.fixture(autouse=True)
+def reset_rate_limits():
+    from core.rate_limit import ALL_LIMITERS
+    for limiter in ALL_LIMITERS:
+        limiter.reset()
+
+
+@pytest.fixture(autouse=True)
 def fake_embeddings(monkeypatch):
     import core.embeddings
     monkeypatch.setattr(core.embeddings, "get_embeddings", lambda: DeterministicFakeEmbedding(size=64))
