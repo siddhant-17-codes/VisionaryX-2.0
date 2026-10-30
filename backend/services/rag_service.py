@@ -42,6 +42,14 @@ def process_files(session_id: str, owner_id: str, files: list[tuple[bytes, str]]
         raise classify_google_error(e) or DocumentProcessingError(str(e)) from e
 
 
+def _cite(doc, citations: list[Citation], seen: set):
+    """One citation per (file, page): "page 1" alone is ambiguous across several files."""
+    source, page = doc.metadata.get("source"), doc.metadata.get("page", 0)
+    if (source, page) not in seen:
+        seen.add((source, page))
+        citations.append(Citation(source=source, page=page, chunk=doc.page_content[:200] + "..."))
+
+
 def query_documents(
     session_id: str, owner_id: str, question: str, history: list[ChatMessage]
 ) -> PDFQueryResponse:
@@ -73,27 +81,19 @@ def query_documents(
 
     context_parts = []
     citations: list[Citation] = []
-    seen_pages = set()
+    seen: set[tuple[str | None, int]] = set()
 
     for doc, score in docs:
         logger.debug(f"Chunk score={round(score, 3)} | page={doc.metadata.get('page')} | accepted={score <= threshold}")
         if score <= threshold:
             context_parts.append(doc.page_content)
-            page = doc.metadata.get("page", 0)
-            if page not in seen_pages:
-                seen_pages.add(page)
-                citations.append(
-                    Citation(page=page, chunk=doc.page_content[:200] + "...")
-                )
+            _cite(doc, citations, seen)
 
     if not context_parts:
         logger.warning("All chunks filtered out — falling back to top 2")
         for doc, _score in docs[:2]:
             context_parts.append(doc.page_content)
-            page = doc.metadata.get("page", 0)
-            if page not in seen_pages:
-                seen_pages.add(page)
-                citations.append(Citation(page=page, chunk=doc.page_content[:200] + "..."))
+            _cite(doc, citations, seen)
 
     logger.info(f"Answering with {len(context_parts)} chunks | {len(citations)} citations")
     context = "\n\n---\n\n".join(context_parts)

@@ -113,10 +113,46 @@ def test_stranger_cannot_upload_into_someone_elses_session(client, uploaded_pdf)
     assert client.get(f"/api/sessions/{uploaded_pdf.chat_id}").json()["session_id"] == uploaded_pdf.session_id
 
 
-@pytest.mark.xfail(strict=True, reason="F2: fixed in fix/citation-sources")
 def test_citations_name_the_source_file(client, uploaded_pdf):
     res = client.post("/api/pdf/query", json={"session_id": uploaded_pdf.session_id, "question": "harvest"})
     assert res.json()["citations"][0]["source"] == "lumen_ridge_report.pdf"
+
+
+def test_citations_from_several_files_keep_their_own_source(client):
+    files = [
+        ("files", ("lumen_ridge_report.pdf", fixture_bytes("lumen_ridge_report.pdf"), PDF)),
+        ("files", ("harbor_lane_handbook.docx", fixture_bytes("harbor_lane_handbook.docx"), DOCX)),
+    ]
+    session_id = client.post("/api/pdf/upload", files=files).json()["session_id"]
+    from core.vector_store import load_vector_store
+    store = load_vector_store(session_id, OWNER_HASH)
+    sources = {doc.metadata["source"] for doc in store.docstore._dict.values()}
+    assert sources == {"lumen_ridge_report.pdf", "harbor_lane_handbook.docx"}
+
+    res = client.post("/api/pdf/query", json={"session_id": session_id, "question": "harvest"})
+    citations = res.json()["citations"]
+    keys = [(c["source"], c["page"]) for c in citations]
+    assert keys and len(keys) == len(set(keys))
+    assert {c["source"] for c in citations} <= sources
+
+
+def test_same_page_number_in_two_files_gives_two_citations():
+    from langchain.schema import Document
+
+    from services.rag_service import _cite
+    citations, seen = [], set()
+    for source in ("a.pdf", "b.pdf", "a.pdf"):
+        _cite(Document(page_content="text", metadata={"source": source, "page": 1}), citations, seen)
+    assert [(c.source, c.page) for c in citations] == [("a.pdf", 1), ("b.pdf", 1)]
+
+
+def test_index_built_before_sources_were_stored_still_cites_pages():
+    from langchain.schema import Document
+
+    from services.rag_service import _cite
+    citations = []
+    _cite(Document(page_content="text", metadata={"page": 3}), citations, set())
+    assert citations[0].source is None and citations[0].page == 3
 
 
 @pytest.mark.xfail(strict=True, reason="F6: fixed in fix/backend-robustness")
