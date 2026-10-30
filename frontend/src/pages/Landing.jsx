@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { wakeServer } from "../api/health";
 import Navbar from "../components/layout/Navbar";
 import { ChatIcon, PDFIcon, ImageIcon, SparkleIcon, GithubIcon } from "../components/icons/Icons";
 
@@ -41,6 +42,9 @@ export default function Landing() {
   const navigate = useNavigate();
   const capabilitiesRef = useRef(null);
   const scrollToCapabilities = () => capabilitiesRef.current?.scrollIntoView({ behavior: "smooth" });
+
+  // Start waking the backend while the visitor reads, so the workspace is ready sooner.
+  useEffect(() => { wakeServer(); }, []);
 
   return (
     <div className="bg-base min-h-screen">
