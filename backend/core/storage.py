@@ -1,5 +1,4 @@
 import base64
-import os
 import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -8,6 +7,7 @@ from postgrest import SyncPostgrestClient
 from postgrest.constants import DEFAULT_POSTGREST_CLIENT_HEADERS
 
 from config.logger import setup_logger
+from config.settings import get_settings
 
 logger = setup_logger("visionaryx.storage")
 
@@ -15,11 +15,14 @@ def _get_client() -> SyncPostgrestClient:
     """Supabase's REST API, called directly because supabase-py 2.7 rejects the new
     sb_secret_ keys and always sends the key as a Bearer token. New keys must go in
     the apikey header only; legacy JWT keys also go in Authorization, as before."""
-    key = os.environ["SUPABASE_SERVICE_KEY"]
+    settings = get_settings()  # reads backend/.env too, unlike os.environ
+    key, url = settings.supabase_service_key, settings.supabase_url
+    if not key or not url:
+        raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set (see backend/.env.example).")
     headers = {**DEFAULT_POSTGREST_CLIENT_HEADERS, "apikey": key}
     if not key.startswith("sb_"):
         headers["Authorization"] = f"Bearer {key}"
-    return SyncPostgrestClient(f"{os.environ['SUPABASE_URL']}/rest/v1", headers=headers)
+    return SyncPostgrestClient(f"{url}/rest/v1", headers=headers)
 
 TABLE = "sessions"
 

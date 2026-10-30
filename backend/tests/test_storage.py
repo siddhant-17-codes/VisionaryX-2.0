@@ -1,17 +1,20 @@
 import pytest
 
+from config.settings import Settings
 from core import storage
 
 LEGACY_JWT = "eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.c2lnbmF0dXJl"
 NEW_SECRET = "sb_secret_0123456789abcdefABCDEF"
 
 
+def settings(url="https://example.supabase.co", key=NEW_SECRET):
+    return Settings(google_api_key="x", huggingfacehub_api_token="x", supabase_url=url, supabase_service_key=key)
+
+
 @pytest.fixture
 def supabase_env(monkeypatch):
-    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
-
     def use(key):
-        monkeypatch.setenv("SUPABASE_SERVICE_KEY", key)
+        monkeypatch.setattr(storage, "get_settings", lambda: settings(key=key))
         return storage._get_client().session
 
     return use
@@ -31,3 +34,19 @@ def test_legacy_jwt_key_keeps_bearer_header(supabase_env):
 
 def test_client_targets_the_rest_endpoint(supabase_env):
     assert str(supabase_env(NEW_SECRET).base_url).rstrip("/") == "https://example.supabase.co/rest/v1"
+
+
+def test_supabase_config_comes_from_settings_not_os_environ(monkeypatch):
+    # Q2: Settings also reads backend/.env; os.environ does not, so a plain
+    # `uvicorn main:app` used to fail every session call with KeyError.
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_SERVICE_KEY", raising=False)
+    monkeypatch.setattr(storage, "get_settings", lambda: settings())
+    assert storage._get_client().session.headers["apikey"] == NEW_SECRET
+
+
+@pytest.mark.parametrize("url,key", [("", NEW_SECRET), ("https://example.supabase.co", "")])
+def test_missing_supabase_config_names_the_variables(monkeypatch, url, key):
+    monkeypatch.setattr(storage, "get_settings", lambda: settings(url=url, key=key))
+    with pytest.raises(RuntimeError, match="SUPABASE_URL and SUPABASE_SERVICE_KEY"):
+        storage._get_client()
