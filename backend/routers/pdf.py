@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from config.logger import setup_logger
 from core.exceptions import FileTooLargeError
 from core.rate_limit import gemini_limit, upload_limit
-from core.storage import append_turn, save_document, update_session_pdf
+from core.storage import append_turn, update_session_pdf
 from models.schemas import History, PDFQueryResponse, SessionRef, UserText
 from routers.deps import MAX_DOCUMENT_BYTES, MAX_DOCUMENTS, owned_session, owner_id, read_capped
 from services.rag_service import process_files, query_documents
@@ -31,7 +31,6 @@ class PersistentPDFQueryRequest(BaseModel):
     chat_session_id: SessionRef | None = None
 
 
-@router.post("/upload", response_model=UploadResponse)
 @router.post("/upload", response_model=UploadResponse)
 def upload_files(
     _: None = Depends(upload_limit),
@@ -59,9 +58,6 @@ def upload_files(
         file_bytes = read_capped(f, MAX_DOCUMENT_BYTES)
         file_data.append((file_bytes, f.filename))
         filenames.append(f.filename)
-
-        if chat_session_id:
-            save_document(chat_session_id, f.filename, file_bytes)
 
     questions = process_files(session_id, owner, file_data)
 

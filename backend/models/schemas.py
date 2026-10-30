@@ -27,19 +27,8 @@ def _keep_recent(history: list[ChatMessage]) -> list[ChatMessage]:
 History = Annotated[list[ChatMessage], AfterValidator(_keep_recent)]
 
 
-class ChatRequest(BaseModel):
-    message: str
-    history: list[ChatMessage] = []
-
-
 class ChatResponse(BaseModel):
     reply: str
-
-
-class PDFQueryRequest(BaseModel):
-    question: str
-    session_id: str
-    history: list[ChatMessage] = []
 
 
 class Citation(BaseModel):
@@ -53,14 +42,6 @@ class Citation(BaseModel):
 class PDFQueryResponse(BaseModel):
     answer: str
     citations: list[Citation]
-
-
-class SuggestedQuestionsResponse(BaseModel):
-    questions: list[str]
-
-
-class ImageQueryRequest(BaseModel):
-    prompt: str | None = "Describe this image in detail."
 
 
 class ImageQueryResponse(BaseModel):

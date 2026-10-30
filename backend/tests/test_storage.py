@@ -57,3 +57,9 @@ def test_client_is_reused_and_has_a_timeout(monkeypatch):
     first, second = storage._get_client(), storage._get_client()
     assert first is second
     assert first.session.timeout.read == storage.SUPABASE_TIMEOUT
+
+
+def test_timestamps_are_utc_and_still_sort_after_older_naive_rows():
+    now = storage._now()
+    assert now.endswith("+00:00") and len(now) == len("2026-10-30T21:00:00.000000+00:00")
+    assert "2026-10-30T20:59:59.999999" < now  # an older row written before this change

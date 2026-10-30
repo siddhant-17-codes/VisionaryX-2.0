@@ -28,9 +28,9 @@ class SessionResponse(BaseModel):
     mode: str
     created_at: str
     updated_at: str
-    messages: list
+    messages: list[dict]
     session_id: str | None = None
-    documents: list | None = None
+    documents: list[str] | None = None
 
 
 @router.post("", response_model=SessionResponse)

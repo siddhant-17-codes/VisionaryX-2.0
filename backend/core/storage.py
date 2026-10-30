@@ -1,7 +1,7 @@
 import base64
 import uuid
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import lru_cache
 
 from postgrest import SyncPostgrestClient
@@ -37,6 +37,13 @@ def _client_for(url: str, key: str) -> SyncPostgrestClient:
 
 TABLE = "sessions"
 
+
+def _now() -> str:
+    """UTC with a fixed format, so the text column still sorts by time. Older rows
+    without an offset were written in UTC too (Render runs in UTC)."""
+    return datetime.now(UTC).isoformat(timespec="microseconds")
+
+
 @dataclass
 class ChatSession:
     id: str
@@ -44,9 +51,9 @@ class ChatSession:
     mode: str
     created_at: str
     updated_at: str
-    messages: list
+    messages: list[dict]
     session_id: str | None = None
-    documents: list | None = None
+    documents: list[str] | None = None
     owner_id: str | None = None
 
 
@@ -56,8 +63,8 @@ class ChatSession:
 def create_chat_session(owner_id: str, mode: str = "chat", title: str = "New chat") -> ChatSession:
     session = ChatSession(
         id=str(uuid.uuid4()), title=title, mode=mode,
-        created_at=datetime.now().isoformat(),
-        updated_at=datetime.now().isoformat(),
+        created_at=_now(),
+        updated_at=_now(),
         messages=[], session_id=None, documents=[], owner_id=owner_id,
     )
     _get_client().table(TABLE).insert(asdict(session)).execute()
@@ -89,7 +96,7 @@ def list_sessions(owner_id: str) -> list[dict]:
 def append_turn(session: ChatSession, question: str, answer: str) -> ChatSession:
     session.messages.append({"role": "user", "content": question})
     session.messages.append({"role": "assistant", "content": answer})
-    session.updated_at = datetime.now().isoformat()
+    session.updated_at = _now()
     if len(session.messages) == 2 and session.title == "New chat":
         first = next((m["content"] for m in session.messages if m["role"] == "user"), "")
         session.title = first[:50] + ("..." if len(first) > 50 else "")
@@ -105,7 +112,7 @@ def update_session_pdf(session: ChatSession, pdf_session_id: str, filenames: lis
     title = filenames[0] if filenames and session.title == "New chat" else session.title
     _get_client().table(TABLE).update({
         "session_id": pdf_session_id, "documents": filenames,
-        "title": title, "updated_at": datetime.now().isoformat(),
+        "title": title, "updated_at": _now(),
     }).eq("id", session.id).eq("owner_id", session.owner_id).execute()
     logger.info(f"Linked PDF session {pdf_session_id} -> chat {session.id}")
 
@@ -129,10 +136,6 @@ def ping_database():
     _get_client().table(TABLE).select("id").limit(1).execute()
 
 
-def save_document(chat_session_id: str, filename: str, file_bytes: bytes):
-    logger.info(f"Document tracked: {filename} for session {chat_session_id}")
-
-
 # ── FAISS persistence ─────────────────────────────────────────────────────
 
 def save_faiss_index(session_id: str, owner_id: str, index_bytes: bytes):
@@ -141,7 +144,7 @@ def save_faiss_index(session_id: str, owner_id: str, index_bytes: bytes):
         "session_id": session_id,
         "owner_id": owner_id,
         "index_b64": b64,
-        "updated_at": datetime.now().isoformat(),
+        "updated_at": _now(),
     }).execute()
     logger.info(f"FAISS index saved: {session_id}")
 
