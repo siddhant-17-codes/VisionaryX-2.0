@@ -22,10 +22,10 @@ def _adaptive_threshold(scores: list[float]) -> float:
     return min(threshold, 2.0)
 
 
-def process_files(session_id: str, files: list[tuple[bytes, str]]) -> list[str]:
+def process_files(session_id: str, owner_id: str, files: list[tuple[bytes, str]]) -> list[str]:
     try:
         logger.info(f"Processing {len(files)} file(s) for session={session_id}")
-        build_vector_store(session_id, files)
+        build_vector_store(session_id, owner_id, files)
         combined_text = ""
         for file_bytes, filename in files:
             chunks = extract_chunks_from_file(file_bytes, filename)
@@ -40,15 +40,15 @@ def process_files(session_id: str, files: list[tuple[bytes, str]]) -> list[str]:
 
 
 def query_documents(
-    session_id: str, question: str, history: list[ChatMessage]
+    session_id: str, owner_id: str, question: str, history: list[ChatMessage]
 ) -> PDFQueryResponse:
     logger.info(f"Query | session={session_id} | question='{question[:60]}...'")
 
-    if not session_exists(session_id):
+    if not session_exists(session_id, owner_id):
         logger.warning(f"Session not found: {session_id}")
         raise SessionNotFoundError(session_id)
 
-    store = load_vector_store(session_id)
+    store = load_vector_store(session_id, owner_id)
     docs = store.similarity_search_with_score(question, k=5)
     logger.debug(f"Retrieved {len(docs)} chunks from FAISS")
 

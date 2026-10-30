@@ -156,10 +156,15 @@ def hf(monkeypatch):
     return FakeInferenceClient
 
 
+OWNER = "owner" + "0" * 27
+STRANGER = {"X-Client-Id": "stranger" + "0" * 24}
+
+
 @pytest.fixture
 def client(supabase, gemini, hf):
+    """Every request carries OWNER's X-Client-Id unless a test overrides the header."""
     from main import app
-    return TestClient(app, raise_server_exceptions=False)
+    return TestClient(app, raise_server_exceptions=False, headers={"X-Client-Id": OWNER})
 
 
 def fixture_bytes(name: str) -> bytes:
