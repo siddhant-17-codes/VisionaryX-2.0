@@ -4,13 +4,16 @@ import TypingIndicator from "./TypingIndicator";
 import ErrorCard from "./ErrorCard";
 
 export default function ChatWindow({ messages, loading, error, onRetry, emptyText = "Start a conversation…" }) {
-  const bottomRef = useRef(null);
+  const listRef = useRef(null);
+  // Scroll only this list. scrollIntoView also scrolled every ancestor, which on
+  // mobile pushed the menu bar off screen.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const list = listRef.current;
+    list?.scrollTo?.({ top: list.scrollHeight, behavior: "smooth" });
   }, [messages, loading, error]);
 
   return (
-    <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+    <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto px-5 py-5 flex flex-col gap-4">
       {messages.length === 0 && !error && (
         <p className="text-center text-hint text-sm mt-20">{emptyText}</p>
       )}
@@ -19,7 +22,6 @@ export default function ChatWindow({ messages, loading, error, onRetry, emptyTex
       ))}
       {loading && <TypingIndicator />}
       {error && !loading && <ErrorCard error={error} onRetry={onRetry} />}
-      <div ref={bottomRef} />
     </div>
   );
 }

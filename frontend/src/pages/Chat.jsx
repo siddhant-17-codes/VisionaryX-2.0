@@ -9,7 +9,7 @@ export default function Chat() {
   const { messages, loading, error, send, sessionTitle, retry } = useChat(restoreId);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full">
       <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-sm font-bold text-linen">{sessionTitle}</h1>
