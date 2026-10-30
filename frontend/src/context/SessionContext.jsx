@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { listSessions, createSession, deleteSession } from "../api/sessions";
+import { isNotFound, notifyError } from "../utils/notify";
 
 const SessionContext = createContext(null);
 
@@ -8,8 +9,16 @@ export function SessionProvider({ children }) {
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [loading, setLoading]             = useState(false);
 
+  // Refresh runs every 30s; only the first failure in a row is shown.
+  const refreshFailed = useRef(false);
   const refresh = useCallback(async () => {
-    try { const data = await listSessions(); setSessions(data); } catch { /* silent until the cold-start branch surfaces it (R1) */ }
+    try {
+      setSessions(await listSessions());
+      refreshFailed.current = false;
+    } catch (e) {
+      if (!refreshFailed.current) notifyError(e, "Couldn't load your conversations.", "sessions-load");
+      refreshFailed.current = true;
+    }
   }, []);
 
   // Refresh on mount and every 30s
@@ -26,13 +35,23 @@ export function SessionProvider({ children }) {
       setActiveSessionId(session.id);
       await refresh();
       return session;
+    } catch (e) {
+      notifyError(e, "Couldn't start a new conversation.", "session-create");
+      return null;
     } finally {
       setLoading(false);
     }
   }, [refresh]);
 
   const removeSession = useCallback(async (id) => {
-    await deleteSession(id);
+    try {
+      await deleteSession(id);
+    } catch (e) {
+      if (!isNotFound(e)) {
+        notifyError(e, "Couldn't delete that conversation.", "session-delete");
+        return;
+      }
+    }
     if (activeSessionId === id) setActiveSessionId(null);
     await refresh();
   }, [activeSessionId, refresh]);

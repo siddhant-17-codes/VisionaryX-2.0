@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { wakeServer } from "../../api/health";
+import ServerStatusBanner from "./ServerStatusBanner";
 import Sidebar from "./Sidebar";
 
 export default function Layout({ children, showSidebar = true }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => { wakeServer(); }, []);
 
   if (!showSidebar) return <>{children}</>;
 
@@ -44,6 +48,7 @@ export default function Layout({ children, showSidebar = true }) {
             Visionary<span className="text-primary">X</span>
           </div>
         </div>
+        <ServerStatusBanner />
         {children}
       </main>
 

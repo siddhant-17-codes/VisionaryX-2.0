@@ -1,11 +1,10 @@
-import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { usePDF } from "../hooks/usePDF";
 import PDFUploader from "../components/pdf/PDFUploader";
 import SuggestedQuestions from "../components/pdf/SuggestedQuestions";
 import ChatWindow from "../components/chat/ChatWindow";
 import ChatInput from "../components/chat/ChatInput";
-import toast from "react-hot-toast";
+import ErrorCard from "../components/chat/ErrorCard";
 
 export default function PDFChat() {
   const location = useLocation();
@@ -14,10 +13,6 @@ export default function PDFChat() {
     messages, suggested, loading, uploading, indexed,
     error, upload, query, reset, uploadedFiles, uploadedFileObjects, retry,
   } = usePDF(restoreId);
-
-  useEffect(() => {
-    if (error?.type === "network") toast.error("Backend connection lost");
-  }, [error]);
 
   return (
     <div className="flex flex-col h-screen">
@@ -53,6 +48,7 @@ export default function PDFChat() {
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-lg">
             <PDFUploader onUpload={upload} loading={uploading} />
+            {error && !uploading && <div className="mt-4 -mx-4"><ErrorCard error={error} /></div>}
           </div>
         </div>
       ) : (

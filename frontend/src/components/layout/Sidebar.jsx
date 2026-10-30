@@ -22,6 +22,7 @@ export default function Sidebar({ onClose }) {
 
   const handleNewChat = async () => {
     const session = await newSession("chat");
+    if (!session) return;
     navigate("/workspace/chat", { state: { sessionId: session.id } });
     onClose?.();
   };

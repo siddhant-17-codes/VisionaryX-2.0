@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { queryImage, generateImage } from "../api/image";
 import { createSession, getSession } from "../api/sessions";
+import { notifyError } from "../utils/notify";
 
 const QUERY_KEY = "vx_image_query_session";
 const GEN_KEY   = "vx_image_gen_session";
@@ -20,7 +21,7 @@ export function useImageQuery() {
         .catch(() => init());
     } else { init(); }
     async function init() {
-      try { const s = await createSession("image"); setSessionId(s.id); localStorage.setItem(QUERY_KEY, s.id); } catch { /* silent until the cold-start branch surfaces it (R1) */ }
+      try { const s = await createSession("image"); setSessionId(s.id); localStorage.setItem(QUERY_KEY, s.id); } catch (e) { notifyError(e, "Couldn't connect to the server.", "session-create"); }
     }
   }, []);
 
@@ -59,7 +60,7 @@ export function useImageGenerate() {
         .catch(() => init());
     } else { init(); }
     async function init() {
-      try { const s = await createSession("generate"); setSessionId(s.id); localStorage.setItem(GEN_KEY, s.id); } catch { /* silent until the cold-start branch surfaces it (R1) */ }
+      try { const s = await createSession("generate"); setSessionId(s.id); localStorage.setItem(GEN_KEY, s.id); } catch (e) { notifyError(e, "Couldn't connect to the server.", "session-create"); }
     }
   }, []);
 

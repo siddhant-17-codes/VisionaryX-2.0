@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { sendMessage } from "../api/chat";
 import { createSession, getSession } from "../api/sessions";
+import { isNotFound, notifyError } from "../utils/notify";
 
 const STORAGE_KEY = "vx_active_chat_session";
 
@@ -23,13 +24,15 @@ export function useChat(restoreSessionId = null) {
           setTitle(session.title !== "New chat" ? session.title : "General Chat");
           localStorage.setItem(STORAGE_KEY, session.id);
           return;
-        } catch { /* silent until the cold-start branch surfaces it (R1) */ }
+        } catch (e) {
+          if (!isNotFound(e)) notifyError(e, "Couldn't load your last conversation.", "session-restore");
+        }
       }
       try {
         const s = await createSession("chat");
         sessionIdRef.current = s.id;
         localStorage.setItem(STORAGE_KEY, s.id);
-      } catch { /* silent until the cold-start branch surfaces it (R1) */ }
+      } catch (e) { notifyError(e, "Couldn't start a new conversation, so this one won't be saved.", "session-create"); }
     };
     init();
   }, [restoreSessionId]);
@@ -76,7 +79,7 @@ export function useChat(restoreSessionId = null) {
       const s = await createSession("chat");
       sessionIdRef.current = s.id;
       localStorage.setItem(STORAGE_KEY, s.id);
-    } catch { /* silent until the cold-start branch surfaces it (R1) */ }
+    } catch (e) { notifyError(e, "Couldn't start a new conversation, so this one won't be saved.", "session-create"); }
   };
 
   return { messages, loading, error, send, clear, retry, sessionTitle };
