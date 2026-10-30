@@ -1,15 +1,18 @@
 import base64
 import io
 
+import httpx
 from huggingface_hub import InferenceClient
 from huggingface_hub.errors import HfHubHTTPError
 
 from config.logger import setup_logger
 from config.settings import get_settings
-from core.exceptions import ImageGenerationError, ImageQuotaExceededError
+from core.exceptions import ImageGenerationError, ImageQuotaExceededError, UpstreamTimeoutError
 
 settings = get_settings()
 logger = setup_logger("visionaryx.image")
+
+HF_TIMEOUT = 60  # seconds; FLUX schnell normally answers in under 10
 
 
 def generate_image(prompt: str) -> str:
@@ -18,6 +21,7 @@ def generate_image(prompt: str) -> str:
         client = InferenceClient(
             provider="auto",
             token=settings.huggingfacehub_api_token,
+            timeout=HF_TIMEOUT,
         )
         image = client.text_to_image(
             prompt,
@@ -28,6 +32,9 @@ def generate_image(prompt: str) -> str:
         resized.save(buffer, format="PNG")
         logger.info("Image generation successful")
         return base64.b64encode(buffer.getvalue()).decode("utf-8")
+    except httpx.TimeoutException as e:
+        logger.error(f"Image generation timed out: {e}")
+        raise UpstreamTimeoutError() from e
     except HfHubHTTPError as e:
         logger.error(f"Image generation failed: {e}")
         if getattr(e.response, "status_code", None) == 402:

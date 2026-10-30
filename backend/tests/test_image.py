@@ -2,7 +2,6 @@ import base64
 import io
 
 import httpx
-import pytest
 from huggingface_hub.errors import HfHubHTTPError
 from PIL import Image
 
@@ -22,7 +21,6 @@ def test_image_query_sends_prompt_and_image(client, gemini):
     assert image.size == (640, 400)
 
 
-@pytest.mark.xfail(strict=True, reason="R2/R4: fixed in fix/gemini-resilience")
 def test_image_query_rejects_non_image(client):
     res = client.post("/api/image/query", files={"file": ("x.png", b"not an image", "image/png")})
     assert res.status_code == 400

@@ -1,7 +1,10 @@
+from typing import Annotated, Literal
+
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 
 from config.logger import setup_logger
+from core.rate_limit import sessions_limit
 from core.storage import (
     create_chat_session,
     delete_session,
@@ -10,13 +13,13 @@ from core.storage import (
 )
 from routers.deps import owner_id
 
-router = APIRouter(prefix="/api/sessions", tags=["sessions"])
+router = APIRouter(prefix="/api/sessions", tags=["sessions"], dependencies=[Depends(sessions_limit)])
 logger = setup_logger("visionaryx.sessions")
 
 
 class CreateSessionRequest(BaseModel):
-    mode: str = "chat"
-    title: str = "New chat"
+    mode: Literal["chat", "pdf", "image", "generate"] = "chat"
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)] = "New chat"
 
 
 class SessionResponse(BaseModel):

@@ -1,9 +1,9 @@
 from config.logger import setup_logger
 from core.chunker import extract_chunks_from_file
-from core.exceptions import DocumentProcessingError, SessionNotFoundError
+from core.exceptions import DocumentProcessingError, SessionNotFoundError, VisionaryXError
 from core.vector_store import build_vector_store, load_vector_store, session_exists
 from models.schemas import ChatMessage, Citation, PDFQueryResponse
-from services.gemini_service import query_with_context, suggest_questions
+from services.gemini_service import classify_google_error, query_with_context, suggest_questions
 
 logger = setup_logger("visionaryx.rag")
 
@@ -34,9 +34,12 @@ def process_files(session_id: str, owner_id: str, files: list[tuple[bytes, str]]
         questions = suggest_questions(combined_text)
         logger.info(f"Session {session_id} ready | {len(files)} file(s) indexed")
         return questions
+    except VisionaryXError:
+        raise
     except Exception as e:
         logger.error(f"File processing failed for session={session_id}: {e}")
-        raise DocumentProcessingError(str(e)) from e
+        # An embedding quota or timeout is not a problem with the document.
+        raise classify_google_error(e) or DocumentProcessingError(str(e)) from e
 
 
 def query_documents(
@@ -48,8 +51,14 @@ def query_documents(
         logger.warning(f"Session not found: {session_id}")
         raise SessionNotFoundError(session_id)
 
-    store = load_vector_store(session_id, owner_id)
-    docs = store.similarity_search_with_score(question, k=5)
+    try:
+        store = load_vector_store(session_id, owner_id)
+        docs = store.similarity_search_with_score(question, k=5)  # embeds the question via Gemini
+    except Exception as e:
+        typed = classify_google_error(e)
+        if typed is None:
+            raise
+        raise typed from e
     logger.debug(f"Retrieved {len(docs)} chunks from FAISS")
 
     if not docs:

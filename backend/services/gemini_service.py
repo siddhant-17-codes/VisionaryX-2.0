@@ -1,15 +1,72 @@
 import google.generativeai as genai
+from google.api_core import exceptions as google_errors
 
 from config.logger import setup_logger
 from config.settings import get_settings
-from core.exceptions import LLMError
+from core.exceptions import (
+    InvalidImageError,
+    LLMError,
+    LLMQuotaError,
+    LLMUnavailableError,
+    UpstreamTimeoutError,
+    VisionaryXError,
+)
 from models.schemas import ChatMessage
 
 settings = get_settings()
 logger = setup_logger("visionaryx.gemini")
 genai.configure(api_key=settings.google_api_key)
 
-_model = genai.GenerativeModel("gemini-2.5-flash")
+# Seconds per model attempt. Three attempts stay inside the frontend's 120s timeout.
+LLM_TIMEOUT = 30
+# The chain is the retry policy, so the SDK's own retries are switched off.
+_REQUEST_OPTIONS = {"timeout": LLM_TIMEOUT, "retry": None}
+
+_chain = [(name, genai.GenerativeModel(name)) for name in settings.gemini_model_list]
+
+# Worth trying the next model: this one is out of quota, overloaded, timed out or retired.
+_FALLBACK_ERRORS = (
+    google_errors.TooManyRequests,
+    google_errors.ServiceUnavailable,
+    google_errors.InternalServerError,
+    google_errors.DeadlineExceeded,
+    google_errors.NotFound,
+)
+
+
+def classify_google_error(exc: BaseException) -> VisionaryXError | None:
+    """Map a Google API failure (possibly wrapped, e.g. by LangChain embeddings) to a
+    typed error by exception type, never by message text. None if it is not one."""
+    while exc is not None:
+        if isinstance(exc, VisionaryXError):
+            return exc
+        if isinstance(exc, google_errors.TooManyRequests):
+            return LLMQuotaError()
+        if isinstance(exc, (google_errors.DeadlineExceeded, TimeoutError)):
+            return UpstreamTimeoutError()
+        if isinstance(exc, (google_errors.ServiceUnavailable, google_errors.InternalServerError,
+                            google_errors.NotFound)):
+            return LLMUnavailableError()
+        if isinstance(exc, google_errors.GoogleAPICallError):
+            return LLMError(str(exc))
+        exc = exc.__cause__
+    return None
+
+
+def _generate(contents) -> str:
+    last_error: Exception | None = None
+    for name, model in _chain:
+        try:
+            response = model.generate_content(contents, request_options=_REQUEST_OPTIONS)
+            return response.text
+        except _FALLBACK_ERRORS as e:
+            logger.warning(f"Gemini model {name} failed ({type(e).__name__}): {e}")
+            last_error = e
+    raise last_error or LLMUnavailableError()
+
+
+def _as_llm_error(e: Exception) -> VisionaryXError:
+    return classify_google_error(e) or LLMError(str(e))
 
 
 def chat(message: str, history: list[ChatMessage]) -> str:
@@ -19,12 +76,12 @@ def chat(message: str, history: list[ChatMessage]) -> str:
             [f"{'User' if m.role == 'user' else 'Assistant'}: {m.content}" for m in history]
         )
         full_prompt = f"{history_text}\nUser: {message}\nAssistant:" if history_text else message
-        response = _model.generate_content(full_prompt)
+        reply = _generate(full_prompt)
         logger.debug("Chat response received successfully")
-        return response.text
+        return reply
     except Exception as e:
         logger.error(f"Chat failed: {e}")
-        raise LLMError(str(e)) from e
+        raise _as_llm_error(e) from e
 
 
 def query_with_context(question: str, context: str, history: list[ChatMessage]) -> str:
@@ -43,12 +100,12 @@ Context:
 {f'Conversation so far:{chr(10)}{history_text}{chr(10)}' if history_text else ''}
 Question: {question}
 Answer:"""
-        response = _model.generate_content(prompt)
+        answer = _generate(prompt)
         logger.debug("RAG query response received")
-        return response.text
+        return answer
     except Exception as e:
         logger.error(f"RAG query failed: {e}")
-        raise LLMError(str(e)) from e
+        raise _as_llm_error(e) from e
 
 
 def suggest_questions(document_summary: str) -> list[str]:
@@ -61,8 +118,8 @@ Document content:
 {document_summary[:3000]}
 
 3 questions:"""
-        response = _model.generate_content(prompt)
-        lines = [line.strip() for line in response.text.strip().split("\n") if line.strip()]
+        text = _generate(prompt)
+        lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
         questions = lines[:3]
         logger.info(f"Generated {len(questions)} suggested questions")
         return questions
@@ -72,15 +129,19 @@ Document content:
 
 
 def analyze_image(image_bytes: bytes, prompt: str) -> str:
-    try:
-        import io
+    import io
 
-        import PIL.Image
-        logger.debug(f"Image analysis | prompt='{prompt[:50]}...'")
+    import PIL.Image
+    try:
         image = PIL.Image.open(io.BytesIO(image_bytes))
-        response = _model.generate_content([prompt, image])
+        image.load()
+    except (OSError, ValueError, PIL.Image.DecompressionBombError) as e:  # OSError covers UnidentifiedImageError
+        raise InvalidImageError() from e
+    try:
+        logger.debug(f"Image analysis | prompt='{prompt[:50]}...'")
+        answer = _generate([prompt, image])
         logger.debug("Image analysis complete")
-        return response.text
+        return answer
     except Exception as e:
         logger.error(f"Image analysis failed: {e}")
-        raise LLMError(str(e)) from e
+        raise _as_llm_error(e) from e

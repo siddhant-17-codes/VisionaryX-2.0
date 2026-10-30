@@ -96,13 +96,15 @@ class FakeSupabase:
 class FakeGemini:
     """Stands in for the GenerativeModel. Records every prompt it receives."""
 
-    def __init__(self):
+    def __init__(self, answer: str = "Fake answer from the model."):
         self.prompts: list = []
+        self.request_options: list = []
         self.error: Exception | None = None
-        self.answer = "Fake answer from the model."
+        self.answer = answer
 
-    def generate_content(self, prompt):
+    def generate_content(self, prompt, request_options=None):
         self.prompts.append(prompt)
+        self.request_options.append(request_options)
         if self.error:
             raise self.error
         if isinstance(prompt, str) and "3 questions:" in prompt:
@@ -137,10 +139,29 @@ def supabase(monkeypatch):
 
 @pytest.fixture
 def gemini(monkeypatch):
+    """A one-model chain. Fallback tests install longer chains with use_chain()."""
     fake = FakeGemini()
     import services.gemini_service
-    monkeypatch.setattr(services.gemini_service, "_model", fake)
+    monkeypatch.setattr(services.gemini_service, "_chain", [("fake-primary", fake)])
     return fake
+
+
+@pytest.fixture
+def use_chain(monkeypatch, gemini):
+    """Replace the model chain: use_chain(primary, fallback, ...) with FakeGemini objects."""
+    import services.gemini_service
+
+    def install(*fakes):
+        monkeypatch.setattr(services.gemini_service, "_chain",
+                            [(f"fake-{i}", fake) for i, fake in enumerate(fakes)])
+    return install
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits():
+    from core.rate_limit import ALL_LIMITERS
+    for limiter in ALL_LIMITERS:
+        limiter.reset()
 
 
 @pytest.fixture(autouse=True)
