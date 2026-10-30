@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from config.logger import setup_logger
 from config.settings import get_settings
 from core.exceptions import VisionaryXError
+from core.storage import ping_database
 from routers import chat_router, generate_router, image_router, pdf_router
 from routers.deps import MAX_REQUEST_BYTES
 from routers.sessions import router as sessions_router
@@ -102,3 +103,15 @@ app.include_router(sessions_router)
 @app.get("/health", tags=["system"])
 async def health():
     return {"status": "ok", "version": "2.0.0"}
+
+
+# Plain def so FastAPI runs the blocking query in its threadpool. The keep-alive
+# workflow calls this every few days so the free Supabase project never pauses.
+@app.get("/health/db", tags=["system"])
+def health_db():
+    try:
+        ping_database()
+    except Exception:
+        logger.exception("Database health check failed")
+        return JSONResponse(status_code=503, content={"status": "error", "database": "unreachable"})
+    return {"status": "ok", "database": "ok"}

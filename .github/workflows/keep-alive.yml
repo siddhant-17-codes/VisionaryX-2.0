@@ -1,7 +1,7 @@
 name: Keep Supabase alive
 
 # Supabase free-tier projects pause after ~7 days without activity.
-# Hitting /api/sessions makes the backend run a real query against Supabase.
+# Hitting /health/db makes the backend run a real query against Supabase.
 on:
   schedule:
     - cron: "0 6 */3 * *" # every 3 days at 06:00 UTC
@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: GET /api/sessions (with retries for Render cold start)
+      - name: GET /health/db (with retries for Render cold start)
         env:
-          URL: https://visionaryx-backend-g44d.onrender.com/api/sessions
+          URL: https://visionaryx-backend.onrender.com/health/db
         run: |
           for attempt in 1 2 3 4; do
             status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 180 "$URL" || echo "000")
