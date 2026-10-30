@@ -37,7 +37,7 @@ def _require_session(chat_session_id: str | None, owner: str):
 
 @router.post("/upload", response_model=UploadResponse)
 @router.post("/upload", response_model=UploadResponse)
-async def upload_files(
+def upload_files(
     _: None = Depends(upload_limit),
     files: list[UploadFile] = File(...),
     chat_session_id: str | None = Form(None, max_length=64),
@@ -60,7 +60,7 @@ async def upload_files(
                 status_code=400,
                 detail=f"Unsupported file: {f.filename}. Upload PDF or DOCX only."
             )
-        file_bytes = await read_capped(f, MAX_DOCUMENT_BYTES)
+        file_bytes = read_capped(f, MAX_DOCUMENT_BYTES)
         file_data.append((file_bytes, f.filename))
         filenames.append(f.filename)
 
@@ -81,7 +81,7 @@ async def upload_files(
 
 
 @router.post("/query", response_model=PDFQueryResponse, dependencies=[Depends(gemini_limit)])
-async def query_pdf(request: PersistentPDFQueryRequest, owner: str = Depends(owner_id)):
+def query_pdf(request: PersistentPDFQueryRequest, owner: str = Depends(owner_id)):
     _require_session(request.chat_session_id, owner)
     result = query_documents(request.session_id, owner, request.question, request.history)
 

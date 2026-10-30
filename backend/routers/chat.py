@@ -19,7 +19,7 @@ class PersistentChatRequest(BaseModel):
 
 
 @router.post("", response_model=ChatResponse, dependencies=[Depends(gemini_limit)])
-async def send_message(request: PersistentChatRequest, owner: str = Depends(owner_id)):
+def send_message(request: PersistentChatRequest, owner: str = Depends(owner_id)):
     # Check ownership before calling the model so a bad session id costs no quota.
     if request.chat_session_id and not load_session(request.chat_session_id, owner):
         raise HTTPException(status_code=404, detail=f"Session '{request.chat_session_id}' not found.")

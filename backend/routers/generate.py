@@ -8,6 +8,6 @@ router = APIRouter(prefix="/api/generate", tags=["generate"])
 
 
 @router.post("/image", response_model=GenerateImageResponse, dependencies=[Depends(generate_limit)])
-async def generate(request: GenerateImageRequest):
+def generate(request: GenerateImageRequest):
     image_b64 = generate_image(request.prompt)
     return GenerateImageResponse(image_base64=image_b64)
