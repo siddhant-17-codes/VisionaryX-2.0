@@ -1,7 +1,15 @@
 const barColors = ["#0077FF", "#00C3FF", "#FEA735", "#FE7235"];
 const numColors = ["#0077FF", "#00C3FF", "#FEA735", "#FE7235"];
 
+// PDF: page number. DOCX has no pages: its heading, or nothing when it has none.
+function locationLabel({ source, page, section }) {
+  if (!source) return `Page ${page}`;  // older answers without a file name
+  if (section) return `· ${section}`;
+  return page > 0 ? `· p. ${page}` : "";
+}
+
 export default function CitationCard({ citation, index }) {
+  const location = locationLabel(citation);
   const color = barColors[index % barColors.length];
   const numBg = numColors[index % numColors.length];
   return (
@@ -24,9 +32,12 @@ export default function CitationCard({ citation, index }) {
             {citation.source}
           </span>
         )}
-        <span className="text-[9px] font-semibold flex-shrink-0" style={{ color }}>
-          {citation.source ? `· p. ${citation.page}` : `Page ${citation.page}`}
-        </span>
+        {location && (
+          <span className={`text-[9px] font-semibold ${citation.section ? "truncate min-w-0" : "flex-shrink-0"}`}
+                style={{ color }} title={citation.section || undefined}>
+            {location}
+          </span>
+        )}
       </div>
       <p className="text-[10px] text-hint leading-relaxed line-clamp-3">{citation.chunk}</p>
     </div>

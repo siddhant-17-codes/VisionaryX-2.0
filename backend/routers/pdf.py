@@ -14,7 +14,8 @@ from services.rag_service import process_files, query_documents
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])
 logger = setup_logger("visionaryx.pdf_router")
 
-SUPPORTED_EXTENSIONS = {".pdf", ".docx", ".doc"}
+# Legacy .doc (binary Word 97) can't be parsed by python-docx, so it is refused up front.
+SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
 
 
 class UploadResponse(BaseModel):

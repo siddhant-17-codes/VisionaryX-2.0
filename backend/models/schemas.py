@@ -45,7 +45,8 @@ class PDFQueryRequest(BaseModel):
 class Citation(BaseModel):
     # File the chunk came from. None for indexes built before sources were stored.
     source: str | None = None
-    page: int
+    page: int  # 0 for DOCX, which has no pages
+    section: str | None = None  # DOCX heading, when there is one
     chunk: str
 
 

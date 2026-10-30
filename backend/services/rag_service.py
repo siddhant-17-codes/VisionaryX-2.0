@@ -41,11 +41,12 @@ def process_files(session_id: str, owner_id: str, files: list[tuple[bytes, str]]
 
 
 def _cite(doc, citations: list[Citation], seen: set):
-    """One citation per (file, page): "page 1" alone is ambiguous across several files."""
-    source, page = doc.metadata.get("source"), doc.metadata.get("page", 0)
-    if (source, page) not in seen:
-        seen.add((source, page))
-        citations.append(Citation(source=source, page=page, chunk=doc.page_content[:200] + "..."))
+    """One citation per (file, page, section): "page 1" alone is ambiguous across files."""
+    meta = doc.metadata
+    key = (meta.get("source"), meta.get("page", 0), meta.get("section"))
+    if key not in seen:
+        seen.add(key)
+        citations.append(Citation(source=key[0], page=key[1], section=key[2], chunk=doc.page_content[:200] + "..."))
 
 
 def query_documents(
@@ -79,7 +80,7 @@ def query_documents(
 
     context_parts = []
     citations: list[Citation] = []
-    seen: set[tuple[str | None, int]] = set()
+    seen: set[tuple[str | None, int, str | None]] = set()
 
     for doc, score in docs:
         logger.debug(f"Chunk score={round(score, 3)} | page={doc.metadata.get('page')} | accepted={score <= threshold}")

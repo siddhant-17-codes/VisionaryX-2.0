@@ -1,5 +1,3 @@
-import pytest
-
 from tests.conftest import OWNER, OWNER_HASH, STRANGER, fixture_bytes
 
 PDF = "application/pdf"
@@ -156,7 +154,6 @@ def test_index_built_before_sources_were_stored_still_cites_pages():
     assert citations[0].source is None and citations[0].page == 3
 
 
-@pytest.mark.xfail(strict=True, reason="F6: fixed in fix/backend-robustness")
 def test_upload_rejects_legacy_doc(client):
     res = client.post("/api/pdf/upload", files=[("files", ("old.doc", b"\xd0\xcf\x11\xe0", "application/msword"))])
     assert res.status_code == 400
