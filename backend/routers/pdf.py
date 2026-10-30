@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from config.logger import setup_logger
 from core.storage import append_turn, load_session, save_document, update_session_pdf
 from models.schemas import ChatMessage, PDFQueryResponse
-from routers.deps import client_id
+from routers.deps import owner_id
 from services.rag_service import process_files, query_documents
 
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])
@@ -38,7 +38,7 @@ def _require_session(chat_session_id: str | None, owner: str):
 async def upload_files(
     files: list[UploadFile] = File(...),
     chat_session_id: str | None = Form(None),
-    owner: str = Depends(client_id),
+    owner: str = Depends(owner_id),
 ):
     if not files:
         raise HTTPException(status_code=400, detail="No files uploaded.")
@@ -76,7 +76,7 @@ async def upload_files(
 
 
 @router.post("/query", response_model=PDFQueryResponse)
-async def query_pdf(request: PersistentPDFQueryRequest, owner: str = Depends(client_id)):
+async def query_pdf(request: PersistentPDFQueryRequest, owner: str = Depends(owner_id)):
     _require_session(request.chat_session_id, owner)
     history = [ChatMessage(**m) if isinstance(m, dict) else m for m in request.history]
     result = query_documents(request.session_id, owner, request.question, history)

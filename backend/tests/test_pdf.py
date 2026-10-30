@@ -1,6 +1,6 @@
 import pytest
 
-from tests.conftest import OWNER, STRANGER, fixture_bytes
+from tests.conftest import OWNER, OWNER_HASH, STRANGER, fixture_bytes
 
 PDF = "application/pdf"
 DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -57,7 +57,7 @@ def test_index_survives_restart(client, uploaded_pdf):
     """The index lives in Supabase, so a fresh process can load and query it."""
     from core.vector_store import load_vector_store
 
-    store = load_vector_store(uploaded_pdf.session_id, OWNER)
+    store = load_vector_store(uploaded_pdf.session_id, OWNER_HASH)
     assert store.similarity_search("harvest", k=1)
 
 
@@ -89,8 +89,10 @@ def test_deleting_session_deletes_its_index(client, uploaded_pdf, supabase):
     assert supabase.db["faiss_indexes"] == []
 
 
-def test_index_is_tagged_with_its_owner(uploaded_pdf, supabase):
-    assert [row["owner_id"] for row in supabase.db["faiss_indexes"]] == [OWNER]
+def test_index_and_session_store_only_the_hashed_owner(uploaded_pdf, supabase):
+    assert [row["owner_id"] for row in supabase.db["faiss_indexes"]] == [OWNER_HASH]
+    assert [row["owner_id"] for row in supabase.db["sessions"]] == [OWNER_HASH]
+    assert OWNER not in repr(supabase.db)  # the raw X-Client-Id never reaches the database
 
 
 def test_stranger_cannot_query_someone_elses_index(client, uploaded_pdf, gemini):

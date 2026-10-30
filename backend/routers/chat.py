@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from config.logger import setup_logger
 from core.storage import append_turn, load_session
 from models.schemas import ChatMessage, ChatResponse
-from routers.deps import client_id
+from routers.deps import owner_id
 from services.gemini_service import chat
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -18,7 +18,7 @@ class PersistentChatRequest(BaseModel):
 
 
 @router.post("", response_model=ChatResponse)
-async def send_message(request: PersistentChatRequest, owner: str = Depends(client_id)):
+async def send_message(request: PersistentChatRequest, owner: str = Depends(owner_id)):
     # Check ownership before calling the model so a bad session id costs no quota.
     if request.chat_session_id and not load_session(request.chat_session_id, owner):
         raise HTTPException(status_code=404, detail=f"Session '{request.chat_session_id}' not found.")

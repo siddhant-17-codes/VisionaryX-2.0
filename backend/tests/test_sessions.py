@@ -66,6 +66,14 @@ def test_stranger_gets_404_not_403(client):
     assert client.get(f"/api/sessions/{sid}").status_code == 200
 
 
+def test_stored_owner_id_cannot_be_replayed_as_a_client_id(client, supabase):
+    """Someone who reads owner_id out of the database still cannot act as that owner."""
+    sid = client.post("/api/sessions", json={"mode": "chat"}).json()["id"]
+    leaked = {"X-Client-Id": supabase.db["sessions"][0]["owner_id"]}
+    assert client.get(f"/api/sessions/{sid}", headers=leaked).status_code == 404
+    assert client.get("/api/sessions", headers=leaked).json() == []
+
+
 def test_stranger_cannot_write_into_someone_elses_chat(client, gemini):
     sid = client.post("/api/sessions", json={"mode": "chat"}).json()["id"]
     res = client.post("/api/chat", headers=STRANGER, json={"message": "hi", "chat_session_id": sid})

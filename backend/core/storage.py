@@ -28,7 +28,7 @@ class ChatSession:
     owner_id: str | None = None
 
 
-# Every read and write below is scoped to owner_id (the browser's X-Client-Id).
+# Every read and write below is scoped to owner_id (SHA-256 of the browser's X-Client-Id).
 # A row owned by someone else behaves exactly like a missing row.
 
 def create_chat_session(owner_id: str, mode: str = "chat", title: str = "New chat") -> ChatSession:

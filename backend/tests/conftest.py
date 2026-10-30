@@ -2,6 +2,7 @@
 Hugging Face) is replaced with an in-memory fake, so tests never touch the network
 or spend API quota. Dummy keys are set before the app is imported."""
 import copy
+import hashlib
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -157,6 +158,7 @@ def hf(monkeypatch):
 
 
 OWNER = "owner" + "0" * 27
+OWNER_HASH = hashlib.sha256(OWNER.encode()).hexdigest()  # what the backend stores as owner_id
 STRANGER = {"X-Client-Id": "stranger" + "0" * 24}
 
 
