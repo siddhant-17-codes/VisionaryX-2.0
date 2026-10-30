@@ -1,4 +1,3 @@
-import os
 import time
 import uuid
 
@@ -18,8 +17,11 @@ from routers.sessions import router as sessions_router
 settings = get_settings()
 logger = setup_logger("visionaryx.main")
 
-
-os.makedirs("logs", exist_ok=True)
+# S2: only the frontend's own origins may call the API from a browser. An explicitly
+# empty ALLOWED_ORIGINS would silently block the live site, so refuse to start.
+if not settings.origins_list:
+    raise RuntimeError("ALLOWED_ORIGINS is empty. Set it to the frontend origin(s), comma-separated.")
+logger.info(f"CORS allowed origins: {settings.origins_list}")
 
 app = FastAPI(
     title="VisionaryX 2.0 API",
@@ -41,9 +43,24 @@ async def limit_request_size(request: Request, call_next):
     return await call_next(request)
 
 
+# L4: an unhandled exception used to reach Starlette's outermost error middleware,
+# outside CORS, so the browser saw a CORS failure instead of the 500, and the log
+# had no exit line. Catching it here, inside CORS, fixes both.
+@app.middleware("http")
+async def catch_unhandled(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as exc:
+        logger.exception(f"Unhandled exception on {request.url.path}: {exc}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "An unexpected error occurred. Please try again.", "type": "InternalServerError"},
+        )
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.origins_list,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,15 +98,6 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     return JSONResponse(
         status_code=422,
         content={"error": f"Invalid {field}: {first.get('msg', 'bad value')}.", "type": "ValidationError"},
-    )
-
-
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    logger.exception(f"Unhandled exception on {request.url.path}: {str(exc)}")
-    return JSONResponse(
-        status_code=500,
-        content={"error": "An unexpected error occurred. Please try again.", "type": "InternalServerError"},
     )
 
 

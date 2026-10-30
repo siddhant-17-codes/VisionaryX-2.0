@@ -14,3 +14,17 @@ describe("CitationCard", () => {
     expect(screen.getByText("Page 3")).toBeInTheDocument();
   });
 });
+
+describe("CitationCard for Word documents", () => {
+  it("shows the section heading instead of a page", () => {
+    render(<CitationCard index={0} citation={{ source: "h.docx", page: 0, section: "Shifts", chunk: "x" }} />);
+    expect(screen.getByText("· Shifts")).toBeInTheDocument();
+    expect(screen.queryByText(/p\. 0/)).toBeNull();
+  });
+
+  it("shows just the file name when the document has no headings", () => {
+    const { container } = render(<CitationCard index={0} citation={{ source: "h.docx", page: 0, chunk: "x" }} />);
+    expect(screen.getByText("h.docx")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/p\. 0|Page 0/);
+  });
+});

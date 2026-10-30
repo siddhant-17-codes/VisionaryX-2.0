@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from config.logger import setup_logger
 from core.rate_limit import gemini_limit
-from core.storage import append_turn, load_session
+from core.storage import append_turn
 from models.schemas import ChatResponse, History, SessionRef, UserText
-from routers.deps import owner_id
+from routers.deps import owned_session, owner_id
 from services.gemini_service import chat
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -19,15 +19,12 @@ class PersistentChatRequest(BaseModel):
 
 
 @router.post("", response_model=ChatResponse, dependencies=[Depends(gemini_limit)])
-async def send_message(request: PersistentChatRequest, owner: str = Depends(owner_id)):
-    # Check ownership before calling the model so a bad session id costs no quota.
-    if request.chat_session_id and not load_session(request.chat_session_id, owner):
-        raise HTTPException(status_code=404, detail=f"Session '{request.chat_session_id}' not found.")
-
+def send_message(request: PersistentChatRequest, owner: str = Depends(owner_id)):
+    session = owned_session(request.chat_session_id, owner)
     reply = chat(request.message, request.history)
 
-    if request.chat_session_id:
-        append_turn(request.chat_session_id, owner, request.message, reply)
+    if session:
+        append_turn(session, request.message, reply)
         logger.debug(f"Persisted chat to session: {request.chat_session_id}")
 
     return ChatResponse(reply=reply)

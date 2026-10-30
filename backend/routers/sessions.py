@@ -28,24 +28,24 @@ class SessionResponse(BaseModel):
     mode: str
     created_at: str
     updated_at: str
-    messages: list
+    messages: list[dict]
     session_id: str | None = None
-    documents: list | None = None
+    documents: list[str] | None = None
 
 
 @router.post("", response_model=SessionResponse)
-async def create_session(request: CreateSessionRequest, owner: str = Depends(owner_id)):
+def create_session(request: CreateSessionRequest, owner: str = Depends(owner_id)):
     session = create_chat_session(owner, mode=request.mode, title=request.title)
     return SessionResponse(**session.__dict__)
 
 
 @router.get("", response_model=list[dict])
-async def get_sessions(owner: str = Depends(owner_id)):
+def get_sessions(owner: str = Depends(owner_id)):
     return list_sessions(owner)
 
 
 @router.get("/{session_id}", response_model=SessionResponse)
-async def get_session(session_id: str, owner: str = Depends(owner_id)):
+def get_session(session_id: str, owner: str = Depends(owner_id)):
     session = load_session(session_id, owner)
     if not session:
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
@@ -53,7 +53,7 @@ async def get_session(session_id: str, owner: str = Depends(owner_id)):
 
 
 @router.delete("/{session_id}")
-async def remove_session(session_id: str, owner: str = Depends(owner_id)):
+def remove_session(session_id: str, owner: str = Depends(owner_id)):
     deleted = delete_session(session_id, owner)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")

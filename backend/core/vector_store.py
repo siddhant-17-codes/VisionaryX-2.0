@@ -5,6 +5,7 @@ import tempfile
 from langchain_community.vectorstores import FAISS
 
 from config.logger import setup_logger
+from core.chunker import Chunk
 from core.storage import faiss_index_exists, load_faiss_index, save_faiss_index
 
 logger = setup_logger("visionaryx.vector_store")
@@ -14,17 +15,17 @@ def _get_embeddings():
     from core.embeddings import get_embeddings
     return get_embeddings()
 
-def build_vector_store(session_id: str, owner_id: str, files: list[tuple[bytes, str]]):
+def build_vector_store(session_id: str, owner_id: str, files: list[tuple[str, list[Chunk]]]):
+    """Index already-extracted chunks: (filename, chunks) per file."""
     from langchain.schema import Document
 
-    from core.chunker import extract_chunks_from_file
     all_docs = []
-    for file_bytes, filename in files:
-        chunks = extract_chunks_from_file(file_bytes, filename)
+    for filename, chunks in files:
         for chunk in chunks:
             all_docs.append(Document(
                 page_content=chunk.text,
-                metadata={"source": filename, "page": chunk.page, "chunk_index": chunk.chunk_index}
+                metadata={"source": filename, "page": chunk.page, "section": chunk.section,
+                          "chunk_index": chunk.chunk_index}
             ))
         logger.debug(f"Chunked {filename}: {len(chunks)} chunks")
 

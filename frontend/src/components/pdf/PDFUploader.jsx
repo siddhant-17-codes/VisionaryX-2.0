@@ -22,7 +22,7 @@ export default function PDFUploader({ onUpload, loading }) {
                  cursor-pointer hover:border-primary transition-colors duration-200
                  flex flex-col items-center gap-3"
     >
-      <input ref={ref} type="file" accept=".pdf,.docx,.doc" multiple onChange={handleChange} className="hidden" />
+      <input ref={ref} type="file" accept=".pdf,.docx" multiple onChange={handleChange} className="hidden" />
       <UploadIcon size={28} color="#3D3050" />
       <div>
         <p className="text-sm font-medium text-muted">

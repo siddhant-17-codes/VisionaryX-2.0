@@ -50,3 +50,18 @@ def test_missing_supabase_config_names_the_variables(monkeypatch, url, key):
     monkeypatch.setattr(storage, "get_settings", lambda: settings(url=url, key=key))
     with pytest.raises(RuntimeError, match="SUPABASE_URL and SUPABASE_SERVICE_KEY"):
         storage._get_client()
+
+
+def test_client_is_reused_and_has_a_timeout(monkeypatch):
+    monkeypatch.setattr(storage, "get_settings", lambda: settings())
+    first, second = storage._get_client(), storage._get_client()
+    assert first is second
+    assert first.session.timeout.read == storage.SUPABASE_TIMEOUT
+
+
+def test_timestamps_are_utc_and_still_sort_after_older_naive_rows():
+    from datetime import UTC, datetime, timedelta
+    older_naive_row = (datetime.now(UTC) - timedelta(seconds=1)).replace(tzinfo=None).isoformat()
+    now = storage._now()
+    assert now.endswith("+00:00") and len(now) == len("2026-10-30T21:00:00.000000+00:00")
+    assert older_naive_row < now

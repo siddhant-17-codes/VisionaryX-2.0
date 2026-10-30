@@ -25,12 +25,10 @@ def _adaptive_threshold(scores: list[float]) -> float:
 def process_files(session_id: str, owner_id: str, files: list[tuple[bytes, str]]) -> list[str]:
     try:
         logger.info(f"Processing {len(files)} file(s) for session={session_id}")
-        build_vector_store(session_id, owner_id, files)
-        combined_text = ""
-        for file_bytes, filename in files:
-            chunks = extract_chunks_from_file(file_bytes, filename)
-            combined_text += " ".join([c.text for c in chunks[:20]])
-            logger.debug(f"Extracted chunks from {filename}")
+        # Each file is parsed once; the chunks feed both the index and the suggestions (F7).
+        chunked = [(filename, extract_chunks_from_file(file_bytes, filename)) for file_bytes, filename in files]
+        build_vector_store(session_id, owner_id, chunked)
+        combined_text = " ".join(c.text for _, chunks in chunked for c in chunks[:20])
         questions = suggest_questions(combined_text)
         logger.info(f"Session {session_id} ready | {len(files)} file(s) indexed")
         return questions
@@ -43,11 +41,12 @@ def process_files(session_id: str, owner_id: str, files: list[tuple[bytes, str]]
 
 
 def _cite(doc, citations: list[Citation], seen: set):
-    """One citation per (file, page): "page 1" alone is ambiguous across several files."""
-    source, page = doc.metadata.get("source"), doc.metadata.get("page", 0)
-    if (source, page) not in seen:
-        seen.add((source, page))
-        citations.append(Citation(source=source, page=page, chunk=doc.page_content[:200] + "..."))
+    """One citation per (file, page, section): "page 1" alone is ambiguous across files."""
+    meta = doc.metadata
+    key = (meta.get("source"), meta.get("page", 0), meta.get("section"))
+    if key not in seen:
+        seen.add(key)
+        citations.append(Citation(source=key[0], page=key[1], section=key[2], chunk=doc.page_content[:200] + "..."))
 
 
 def query_documents(
@@ -81,7 +80,7 @@ def query_documents(
 
     context_parts = []
     citations: list[Citation] = []
-    seen: set[tuple[str | None, int]] = set()
+    seen: set[tuple[str | None, int, str | None]] = set()
 
     for doc, score in docs:
         logger.debug(f"Chunk score={round(score, 3)} | page={doc.metadata.get('page')} | accepted={score <= threshold}")

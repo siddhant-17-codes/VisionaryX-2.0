@@ -1,5 +1,3 @@
-import pytest
-
 from tests.conftest import OWNER, OWNER_HASH, STRANGER, fixture_bytes
 
 PDF = "application/pdf"
@@ -156,7 +154,28 @@ def test_index_built_before_sources_were_stored_still_cites_pages():
     assert citations[0].source is None and citations[0].page == 3
 
 
-@pytest.mark.xfail(strict=True, reason="F6: fixed in fix/backend-robustness")
 def test_upload_rejects_legacy_doc(client):
     res = client.post("/api/pdf/upload", files=[("files", ("old.doc", b"\xd0\xcf\x11\xe0", "application/msword"))])
     assert res.status_code == 400
+
+
+def test_each_file_is_parsed_once(client, monkeypatch):
+    import services.rag_service
+    calls = []
+    real = services.rag_service.extract_chunks_from_file
+
+    def spy(file_bytes, filename):
+        calls.append(filename)
+        return real(file_bytes, filename)
+    monkeypatch.setattr(services.rag_service, "extract_chunks_from_file", spy)
+
+    res = client.post("/api/pdf/upload", files=[
+        ("files", ("lumen_ridge_report.pdf", fixture_bytes("lumen_ridge_report.pdf"), PDF))])
+    assert res.status_code == 200
+    assert calls == ["lumen_ridge_report.pdf"]
+
+
+def test_cleaning_keeps_paragraph_breaks_for_the_splitter():
+    from core.chunker import _clean_text
+    raw = "Title  line\t here\r\n\n\n\nFirst   paragraph.\n  Second\x00line."
+    assert _clean_text(raw) == "Title line here\n\nFirst paragraph.\nSecond line."
