@@ -10,7 +10,7 @@ export function useImageQuery() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
-  const [sessionId, setSessionId] = useState(null);
+  const [, setSessionId] = useState(null);
 
   useEffect(() => {
     const existing = localStorage.getItem(QUERY_KEY);
@@ -20,7 +20,7 @@ export function useImageQuery() {
         .catch(() => init());
     } else { init(); }
     async function init() {
-      try { const s = await createSession("image"); setSessionId(s.id); localStorage.setItem(QUERY_KEY, s.id); } catch {}
+      try { const s = await createSession("image"); setSessionId(s.id); localStorage.setItem(QUERY_KEY, s.id); } catch { /* silent until the cold-start branch surfaces it (R1) */ }
     }
   }, []);
 
@@ -49,7 +49,7 @@ export function useImageGenerate() {
   const [history, setHistory]   = useState([]);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
-  const [sessionId, setSessionId] = useState(null);
+  const [, setSessionId] = useState(null);
 
   useEffect(() => {
     const existing = localStorage.getItem(GEN_KEY);
@@ -59,7 +59,7 @@ export function useImageGenerate() {
         .catch(() => init());
     } else { init(); }
     async function init() {
-      try { const s = await createSession("generate"); setSessionId(s.id); localStorage.setItem(GEN_KEY, s.id); } catch {}
+      try { const s = await createSession("generate"); setSessionId(s.id); localStorage.setItem(GEN_KEY, s.id); } catch { /* silent until the cold-start branch surfaces it (R1) */ }
     }
   }, []);
 

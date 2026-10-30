@@ -1,10 +1,11 @@
-import uuid
-import os
 import base64
+import os
+import uuid
+from dataclasses import asdict, dataclass
 from datetime import datetime
-from dataclasses import dataclass, asdict
-from typing import Optional
-from supabase import create_client, Client
+
+from supabase import Client, create_client
+
 from config.logger import setup_logger
 
 logger = setup_logger("visionaryx.storage")
@@ -22,8 +23,8 @@ class ChatSession:
     created_at: str
     updated_at: str
     messages: list
-    session_id: Optional[str] = None
-    documents: Optional[list] = None
+    session_id: str | None = None
+    documents: list | None = None
 
 
 def create_chat_session(mode: str = "chat", title: str = "New chat") -> ChatSession:
@@ -38,7 +39,7 @@ def create_chat_session(mode: str = "chat", title: str = "New chat") -> ChatSess
     return session
 
 
-def load_session(session_id: str) -> Optional[ChatSession]:
+def load_session(session_id: str) -> ChatSession | None:
     res = _get_client().table(TABLE).select("*").eq("id", session_id).execute()
     if not res.data:
         return None
@@ -56,7 +57,7 @@ def list_sessions() -> list[dict]:
     } for r in res.data]
 
 
-def append_message(session_id: str, role: str, content: str) -> Optional[ChatSession]:
+def append_message(session_id: str, role: str, content: str) -> ChatSession | None:
     session = load_session(session_id)
     if not session:
         return None
@@ -108,7 +109,7 @@ def save_faiss_index(session_id: str, index_bytes: bytes):
     logger.info(f"FAISS index saved: {session_id}")
 
 
-def load_faiss_index(session_id: str) -> Optional[bytes]:
+def load_faiss_index(session_id: str) -> bytes | None:
     res = _get_client().table("faiss_indexes").select("index_b64").eq("session_id", session_id).execute()
     if not res.data:
         return None

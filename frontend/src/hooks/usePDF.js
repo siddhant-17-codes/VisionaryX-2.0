@@ -28,7 +28,7 @@ export function usePDF(restoreSessionId = null) {
         setMessages(session.messages || []);
         setUploadedFiles(session.documents || []);
         if (session.session_id) { setIndexed(true); localStorage.setItem(STORAGE_KEY, session.id); }
-      } catch {}
+      } catch { /* silent until the cold-start branch surfaces it (R1) */ }
     };
     init();
   }, [restoreSessionId]);

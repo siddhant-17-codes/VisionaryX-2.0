@@ -1,6 +1,8 @@
 import io
 from dataclasses import dataclass
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 from config.logger import setup_logger
 from core.exceptions import DocumentProcessingError, UnsupportedFileTypeError
 
@@ -30,7 +32,7 @@ def extract_chunks_from_pdf(file_bytes: bytes) -> list[Chunk]:
     except DocumentProcessingError:
         raise
     except Exception as e:
-        raise DocumentProcessingError(f"PDF extraction failed: {e}")
+        raise DocumentProcessingError(f"PDF extraction failed: {e}") from e
 
 
 def _safe_extract_text(page) -> str:
@@ -102,7 +104,7 @@ def extract_chunks_from_docx(file_bytes: bytes) -> list[Chunk]:
     except DocumentProcessingError:
         raise
     except Exception as e:
-        raise DocumentProcessingError(f"DOCX extraction failed: {e}")
+        raise DocumentProcessingError(f"DOCX extraction failed: {e}") from e
 
 
 def extract_chunks_from_file(file_bytes: bytes, filename: str) -> list[Chunk]:

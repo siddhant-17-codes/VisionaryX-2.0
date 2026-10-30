@@ -23,13 +23,13 @@ export function useChat(restoreSessionId = null) {
           setTitle(session.title !== "New chat" ? session.title : "General Chat");
           localStorage.setItem(STORAGE_KEY, session.id);
           return;
-        } catch {}
+        } catch { /* silent until the cold-start branch surfaces it (R1) */ }
       }
       try {
         const s = await createSession("chat");
         sessionIdRef.current = s.id;
         localStorage.setItem(STORAGE_KEY, s.id);
-      } catch {}
+      } catch { /* silent until the cold-start branch surfaces it (R1) */ }
     };
     init();
   }, [restoreSessionId]);
@@ -76,7 +76,7 @@ export function useChat(restoreSessionId = null) {
       const s = await createSession("chat");
       sessionIdRef.current = s.id;
       localStorage.setItem(STORAGE_KEY, s.id);
-    } catch {}
+    } catch { /* silent until the cold-start branch surfaces it (R1) */ }
   };
 
   return { messages, loading, error, send, clear, retry, sessionTitle };

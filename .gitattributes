@@ -1,0 +1,7 @@
+# Never let line-ending conversion touch binary files (test fixtures, examples, media).
+*.pdf  binary
+*.docx binary
+*.png  binary
+*.jpg  binary
+*.gif  binary
+*.mp4  binary

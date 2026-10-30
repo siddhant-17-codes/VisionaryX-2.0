@@ -6,7 +6,7 @@ import ChatInput from "../components/chat/ChatInput";
 export default function Chat() {
   const location = useLocation();
   const restoreId = location.state?.sessionId || null;
-  const { messages, loading, error, send, clear, sessionTitle, lastInput, retry } = useChat(restoreId);
+  const { messages, loading, error, send, sessionTitle, retry } = useChat(restoreId);
 
   return (
     <div className="flex flex-col h-screen">

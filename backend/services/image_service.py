@@ -1,9 +1,11 @@
 import base64
 import io
+
 from huggingface_hub import InferenceClient
 from huggingface_hub.errors import HfHubHTTPError
-from config.settings import get_settings
+
 from config.logger import setup_logger
+from config.settings import get_settings
 from core.exceptions import ImageGenerationError, ImageQuotaExceededError
 
 settings = get_settings()
@@ -29,8 +31,8 @@ def generate_image(prompt: str) -> str:
     except HfHubHTTPError as e:
         logger.error(f"Image generation failed: {e}")
         if getattr(e.response, "status_code", None) == 402:
-            raise ImageQuotaExceededError()
-        raise ImageGenerationError(str(e))
+            raise ImageQuotaExceededError() from e
+        raise ImageGenerationError(str(e)) from e
     except Exception as e:
         logger.error(f"Image generation failed: {e}")
-        raise ImageGenerationError(str(e))
+        raise ImageGenerationError(str(e)) from e
