@@ -25,12 +25,10 @@ def _adaptive_threshold(scores: list[float]) -> float:
 def process_files(session_id: str, owner_id: str, files: list[tuple[bytes, str]]) -> list[str]:
     try:
         logger.info(f"Processing {len(files)} file(s) for session={session_id}")
-        build_vector_store(session_id, owner_id, files)
-        combined_text = ""
-        for file_bytes, filename in files:
-            chunks = extract_chunks_from_file(file_bytes, filename)
-            combined_text += " ".join([c.text for c in chunks[:20]])
-            logger.debug(f"Extracted chunks from {filename}")
+        # Each file is parsed once; the chunks feed both the index and the suggestions (F7).
+        chunked = [(filename, extract_chunks_from_file(file_bytes, filename)) for file_bytes, filename in files]
+        build_vector_store(session_id, owner_id, chunked)
+        combined_text = " ".join(c.text for _, chunks in chunked for c in chunks[:20])
         questions = suggest_questions(combined_text)
         logger.info(f"Session {session_id} ready | {len(files)} file(s) indexed")
         return questions

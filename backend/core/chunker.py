@@ -1,4 +1,5 @@
 import io
+import re
 from dataclasses import dataclass
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -139,13 +140,14 @@ def _split_pages(page_texts: list[tuple[int, str]]) -> list[Chunk]:
 
 
 def _clean_text(text: str) -> str:
-    """Clean and normalize extracted text."""
+    """Clean and normalize extracted text, keeping line and paragraph breaks: the
+    splitter cuts on them first, so chunks end at natural boundaries (F7)."""
     # Remove surrogate characters that cause encoding issues
     cleaned = text.encode("utf-8", errors="ignore").decode("utf-8")
     # Remove null bytes
     cleaned = cleaned.replace("\x00", " ")
-    # Normalize whitespace
-    import re
-    cleaned = re.sub(r'\s+', ' ', cleaned)
-    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
+    # Collapse runs of spaces and tabs, but not newlines
+    cleaned = re.sub(r"[^\S\n]+", " ", cleaned)
+    cleaned = re.sub(r" *\n *", "\n", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned.strip()
