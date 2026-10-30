@@ -1,4 +1,4 @@
-from google.api_core.exceptions import ResourceExhausted
+from tests.conftest import api_error
 
 
 def test_chat_returns_reply(client, gemini):
@@ -13,9 +13,10 @@ def test_chat_sends_history_to_model(client, gemini):
         {"role": "assistant", "content": "Noted."},
     ]
     client.post("/api/chat", json={"message": "What is my codename?", "history": history})
-    prompt = gemini.prompts[-1]
-    assert "Quillfeather" in prompt
-    assert prompt.rstrip().endswith("Assistant:")
+    # Real multi-turn contents, not one flattened prompt string.
+    turns = [(c.role, c.parts[0].text) for c in gemini.contents[-1]]
+    assert turns == [("user", "My codename is Quillfeather."), ("model", "Noted."),
+                     ("user", "What is my codename?")]
 
 
 def test_chat_persists_turn_and_titles_session(client):
@@ -39,5 +40,5 @@ def test_chat_rejects_empty_message(client):
 
 
 def test_quota_error_returns_429(client, gemini):
-    gemini.error = ResourceExhausted("You exceeded your current quota")
+    gemini.error = api_error(429, "RESOURCE_EXHAUSTED", "You exceeded your current quota")
     assert client.post("/api/chat", json={"message": "Hello"}).status_code == 429
