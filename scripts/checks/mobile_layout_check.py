@@ -1,7 +1,7 @@
 """Mobile layout check (390x844, headless Chrome). Every API call is mocked; nothing reaches a real backend.
 
 Run: cd frontend && VITE_API_URL=http://localhost:8999 npx vite --port 5199
-Then: uv run --no-project --with playwright python scripts/checks/mobile_layout_check.py http://localhost:5199 out/mobile
+Then: uv run --no-project --with playwright python scripts/checks/mobile_layout_check.py http://localhost:5199 "$TEMP/mobile"
 
 Expected: stats box fits; /workspace/chat and /workspace/pdf have docHeight == viewport and
 topbarTop == 0, also after 6 chat turns. Screenshots go to <prefix>_landing.png and <prefix>_chat.png.
