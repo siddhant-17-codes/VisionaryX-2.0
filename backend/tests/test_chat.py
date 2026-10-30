@@ -1,4 +1,5 @@
 import pytest
+from google.api_core.exceptions import ResourceExhausted
 
 
 def test_chat_returns_reply(client, gemini):
@@ -39,7 +40,6 @@ def test_chat_rejects_empty_message(client):
     assert client.post("/api/chat", json={"message": ""}).status_code == 422
 
 
-@pytest.mark.xfail(strict=True, reason="F1/R2: fixed in fix/gemini-resilience")
 def test_quota_error_returns_429(client, gemini):
-    gemini.error = RuntimeError("429 You exceeded your current quota")
+    gemini.error = ResourceExhausted("You exceeded your current quota")
     assert client.post("/api/chat", json={"message": "Hello"}).status_code == 429

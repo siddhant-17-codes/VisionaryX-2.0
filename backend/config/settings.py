@@ -9,10 +9,19 @@ class Settings(BaseSettings):
     allowed_origins: str = "http://localhost:5173"
     supabase_url: str = ""
     supabase_service_key: str = ""
+    # Tried in order; the next model is used when one is out of quota, overloaded or
+    # gone. Each model has its own free-tier quota.
+    gemini_models: str = "gemini-2.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite"
+    # Proxies that append to X-Forwarded-For when CF-Connecting-IP is absent.
+    trusted_proxy_hops: int = 1
 
     @property
     def origins_list(self) -> list[str]:
         return [o.strip() for o in self.allowed_origins.split(",")]
+
+    @property
+    def gemini_model_list(self) -> list[str]:
+        return [m.strip() for m in self.gemini_models.split(",") if m.strip()]
 
     class Config:
         env_file = ".env"
