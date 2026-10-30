@@ -77,11 +77,14 @@ export default function Landing() {
               View on GitHub
             </a>
           </div>
-          {/* Stats row — scrollable on mobile */}
-          <div className="flex justify-center overflow-x-auto px-4">
-            <div className="flex border border-border rounded-xl bg-surface overflow-hidden min-w-max">
-              {[["RAG","Core engine"],["FAISS","Vector search"],["2.5","Gemini Flash"],["FLUX","Image gen"]].map(([num,lbl]) => (
-                <div key={lbl} className="flex-1 px-4 md:px-6 py-3 text-center border-r border-border last:border-r-0">
+          {/* Stats: 2×2 on phones, one row from sm up. Nothing scrolls or gets cut off. */}
+          <div className="px-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 max-w-xs sm:max-w-none sm:w-max mx-auto
+                            border border-border rounded-xl bg-surface overflow-hidden">
+              {[["RAG","Core engine"],["FAISS","Vector search"],["2.5","Gemini Flash"],["FLUX","Image gen"]].map(([num,lbl], i) => (
+                <div key={lbl} className={`px-4 md:px-6 py-3 text-center border-border
+                                           ${i % 2 === 0 ? "border-r" : ""} ${i < 2 ? "border-b sm:border-b-0" : ""}
+                                           sm:border-r sm:last:border-r-0`}>
                   <div className="text-base font-extrabold text-primary">{num}</div>
                   <div className="text-[9px] font-semibold text-hint uppercase tracking-widest mt-0.5 whitespace-nowrap">{lbl}</div>
                 </div>
