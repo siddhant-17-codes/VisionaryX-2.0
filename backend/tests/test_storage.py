@@ -50,3 +50,10 @@ def test_missing_supabase_config_names_the_variables(monkeypatch, url, key):
     monkeypatch.setattr(storage, "get_settings", lambda: settings(url=url, key=key))
     with pytest.raises(RuntimeError, match="SUPABASE_URL and SUPABASE_SERVICE_KEY"):
         storage._get_client()
+
+
+def test_client_is_reused_and_has_a_timeout(monkeypatch):
+    monkeypatch.setattr(storage, "get_settings", lambda: settings())
+    first, second = storage._get_client(), storage._get_client()
+    assert first is second
+    assert first.session.timeout.read == storage.SUPABASE_TIMEOUT

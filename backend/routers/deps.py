@@ -4,6 +4,7 @@ import re
 from fastapi import Header, HTTPException, UploadFile
 
 from core.exceptions import FileTooLargeError
+from core.storage import ChatSession, load_session
 
 MB = 1024 * 1024
 MAX_DOCUMENTS = 5
@@ -32,3 +33,14 @@ def owner_id(x_client_id: str | None = Header(None)) -> str:
     if not x_client_id or not _CLIENT_ID.fullmatch(x_client_id):
         raise HTTPException(status_code=400, detail="Missing or invalid X-Client-Id header.")
     return hashlib.sha256(x_client_id.encode()).hexdigest()
+
+
+def owned_session(chat_session_id: str | None, owner: str) -> ChatSession | None:
+    """The caller's chat session, or None when no id was given. Someone else's
+    session is a 404, checked before any model call so a bad id costs no quota."""
+    if not chat_session_id:
+        return None
+    session = load_session(chat_session_id, owner)
+    if not session:
+        raise HTTPException(status_code=404, detail=f"Session '{chat_session_id}' not found.")
+    return session

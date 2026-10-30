@@ -42,3 +42,23 @@ def test_chat_rejects_empty_message(client):
 def test_quota_error_returns_429(client, gemini):
     gemini.error = api_error(429, "RESOURCE_EXHAUSTED", "You exceeded your current quota")
     assert client.post("/api/chat", json={"message": "Hello"}).status_code == 429
+
+
+def test_a_saved_turn_costs_one_read_and_one_write(client, supabase, monkeypatch):
+    sid = client.post("/api/sessions", json={"mode": "chat"}).json()["id"]
+    ops = []
+    real_table = supabase.table
+
+    def counting_table(name):
+        query = real_table(name)
+        real_execute = query.execute
+
+        def execute():
+            ops.append(query.op)
+            return real_execute()
+        query.execute = execute
+        return query
+    monkeypatch.setattr(supabase, "table", counting_table)
+
+    client.post("/api/chat", json={"message": "hi", "chat_session_id": sid})
+    assert ops == ["select", "update"]

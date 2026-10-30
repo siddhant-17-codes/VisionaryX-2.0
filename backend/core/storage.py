@@ -2,6 +2,7 @@ import base64
 import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from functools import lru_cache
 
 from postgrest import SyncPostgrestClient
 from postgrest.constants import DEFAULT_POSTGREST_CLIENT_HEADERS
@@ -11,6 +12,10 @@ from config.settings import get_settings
 
 logger = setup_logger("visionaryx.storage")
 
+# Seconds for any Supabase request; a stuck database call fails instead of hanging.
+SUPABASE_TIMEOUT = 15
+
+
 def _get_client() -> SyncPostgrestClient:
     """Supabase's REST API, called directly because supabase-py 2.7 rejects the new
     sb_secret_ keys and always sends the key as a Bearer token. New keys must go in
@@ -19,10 +24,16 @@ def _get_client() -> SyncPostgrestClient:
     key, url = settings.supabase_service_key, settings.supabase_url
     if not key or not url:
         raise RuntimeError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set (see backend/.env.example).")
+    return _client_for(url, key)
+
+
+@lru_cache
+def _client_for(url: str, key: str) -> SyncPostgrestClient:
+    """One client (and connection pool) per URL and key, shared across threads."""
     headers = {**DEFAULT_POSTGREST_CLIENT_HEADERS, "apikey": key}
     if not key.startswith("sb_"):
         headers["Authorization"] = f"Bearer {key}"
-    return SyncPostgrestClient(f"{url}/rest/v1", headers=headers)
+    return SyncPostgrestClient(f"{url}/rest/v1", headers=headers, timeout=SUPABASE_TIMEOUT)
 
 TABLE = "sessions"
 
@@ -72,10 +83,10 @@ def list_sessions(owner_id: str) -> list[dict]:
     } for r in res.data]
 
 
-def append_turn(session_id: str, owner_id: str, question: str, answer: str) -> ChatSession | None:
-    session = load_session(session_id, owner_id)
-    if not session:
-        return None
+# The two writers below take the session the route already loaded for its ownership
+# check, so a turn costs one read and one write instead of two reads and a write.
+
+def append_turn(session: ChatSession, question: str, answer: str) -> ChatSession:
     session.messages.append({"role": "user", "content": question})
     session.messages.append({"role": "assistant", "content": answer})
     session.updated_at = datetime.now().isoformat()
@@ -86,20 +97,17 @@ def append_turn(session_id: str, owner_id: str, question: str, answer: str) -> C
         "messages": session.messages,
         "title": session.title,
         "updated_at": session.updated_at,
-    }).eq("id", session_id).eq("owner_id", owner_id).execute()
+    }).eq("id", session.id).eq("owner_id", session.owner_id).execute()
     return session
 
 
-def update_session_pdf(session_id: str, owner_id: str, pdf_session_id: str, filenames: list[str]):
-    session = load_session(session_id, owner_id)
-    if not session:
-        return
+def update_session_pdf(session: ChatSession, pdf_session_id: str, filenames: list[str]):
     title = filenames[0] if filenames and session.title == "New chat" else session.title
     _get_client().table(TABLE).update({
         "session_id": pdf_session_id, "documents": filenames,
         "title": title, "updated_at": datetime.now().isoformat(),
-    }).eq("id", session_id).eq("owner_id", owner_id).execute()
-    logger.info(f"Linked PDF session {pdf_session_id} → chat {session_id}")
+    }).eq("id", session.id).eq("owner_id", session.owner_id).execute()
+    logger.info(f"Linked PDF session {pdf_session_id} -> chat {session.id}")
 
 
 def delete_session(session_id: str, owner_id: str) -> bool:
