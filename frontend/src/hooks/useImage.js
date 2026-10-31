@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { queryImage, generateImage } from "../api/image";
 import { createSession, getSession } from "../api/sessions";
+import { reveal } from "../utils/reveal";
 import { notifyError } from "../utils/notify";
 
 const QUERY_KEY = "vx_image_query_session";
@@ -29,14 +30,7 @@ export function useImageQuery() {
     setLoading(true); setError(null);
     try {
       const result = await queryImage(file, prompt);
-      // Stream result
-      let streamed = "";
-      const words = result.split(" ");
-      for (let i = 0; i < words.length; i++) {
-        streamed += (i === 0 ? "" : " ") + words[i];
-        setAnswer(streamed);
-        await new Promise((r) => setTimeout(r, 16));
-      }
+      await reveal(result, setAnswer);
       setHistory((h) => [...h, { role: "user", content: prompt || "Analyse image" }, { role: "assistant", content: result }]);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }

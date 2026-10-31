@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { sendMessage } from "../api/chat";
 import { createSession, getSession } from "../api/sessions";
+import { reveal } from "../utils/reveal";
 import { isNotFound, notifyError } from "../utils/notify";
 
 const STORAGE_KEY = "vx_active_chat_session";
@@ -46,13 +47,7 @@ export function useChat(restoreSessionId = null) {
     try {
       const history = updated.slice(0, -1);
       const reply = await sendMessage(text, history, sessionIdRef.current);
-      let streamed = "";
-      const words = reply.split(" ");
-      for (let i = 0; i < words.length; i++) {
-        streamed += (i === 0 ? "" : " ") + words[i];
-        setMessages([...updated, { role: "assistant", content: streamed }]);
-        await new Promise((r) => setTimeout(r, 18));
-      }
+      await reveal(reply, (shown) => setMessages([...updated, { role: "assistant", content: shown }]));
     } catch (e) {
       setError(e);
     } finally {
