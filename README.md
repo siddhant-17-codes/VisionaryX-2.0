@@ -23,7 +23,7 @@ https://github.com/user-attachments/assets/c9dcaeee-b7f1-4961-b965-6b8ca4d2f264
 
 **At a glance:** four AI features in one workspace · retrieval-augmented answers with
 file, page and section citations · runs entirely on free tiers (Vercel, Render, Supabase,
-Gemini, Cloudflare Workers AI) · 125 backend and 53 frontend tests, all passing
+Gemini, Cloudflare Workers AI) · 135 backend and 56 frontend tests, all passing
 (2026-10-31).
 
 **Contents:** [Problem](#the-problem) · [What it does](#what-it-does) ·
@@ -248,7 +248,7 @@ N = chunks in a chat's index, d = 3,072 (embedding dimensions), k = 5.
 | Retrieval filtering | Top-k, then a relative (adaptive) distance threshold, with a top-2 fallback | k = 5; keep distance ≤ min(1.4 × best, 2.0) | O(k) | Adapts to each question; a fixed cut-off is too strict for vague questions and too loose for precise ones | `backend/services/rag_service.py` |
 | Prompt grounding | System instruction plus a context block | Kept chunks in distance order, separated by `---` lines (not numbered); `Context: … Question: …`; last 40 history messages as real turns | O(context length) | Rules in the system instruction, sources in the turn; the model has an exact sentence for "not in the documents" | `backend/services/gemini_service.py` |
 | Citation construction | Built from the retrieved chunks, de-duplicated with a set keyed on (file, page, section) | Excerpt = first 200 characters | O(k) | Cards cannot be hallucinated; the file name disambiguates "page 1" across files | `backend/services/rag_service.py` |
-| Index persistence | JSON codec: `faiss.serialize_index` bytes in base64, plus chunk texts and metadata; old pickles read by an allow-list unpickler that maps two classes to inert stand-ins | Format `visionaryx-faiss/1`; stored base64 in a text column | O(N·d) | Loading a row can no longer run code, and indexes saved before the change still load | `backend/core/faiss_codec.py` |
+| Index persistence | JSON codec: `faiss.serialize_index` bytes in base64, plus chunk texts and metadata; old pickles read by an allow-list unpickler that maps two classes to inert stand-ins | Format `visionaryx-faiss/1`, stored as JSON text with no further encoding (rows from 2.0.0 and earlier: base64) | O(N·d) | Loading a row can no longer run code, and indexes saved before the change still load | `backend/core/faiss_codec.py` |
 | Client ID hashing | SHA-256 of a random browser ID | ID: 16–64 of `A–Z a–z 0–9 _ -`; the browser makes 32 hex characters | O(1) | A stored hash cannot be replayed as the header | `backend/routers/deps.py` |
 | Rate limiting | Sliding-window log per IP (a deque of timestamps) | 20/min Gemini routes, 5/min uploads, 10/min and 20/day images, 60/min session calls | Amortised O(1) per request; memory O(limit) per IP | Exact limits with no burst at window edges; one instance, so memory is enough | `backend/core/rate_limit.py` |
 | Model fallback | Ordered failover chain | `gemini-2.5-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`; next on 429, 404, 500, 503, 504 or timeout; 30 s per attempt, SDK retries off | At most 3 attempts | Each model has its own free quota | `backend/services/gemini_service.py` |
@@ -364,9 +364,12 @@ that a change to chunk size or the threshold is judged by numbers. Each is expla
   `allow_dangerous_deserialization`, so anyone able to write a row could run code on the
   server.
 - *What I did:* new indexes are JSON: the raw FAISS index (base64) plus each chunk's text
-  and metadata (`backend/core/faiss_codec.py`). Indexes saved before still load, through a
-  **data-only unpickler** that maps the only two classes they contain to inert stand-ins
-  and refuses everything else, so no class code runs.
+  and metadata (`backend/core/faiss_codec.py`), stored as text with no further encoding
+  since 2.0.1 (2.0.0 base64-encoded the JSON once more; those rows still load, and
+  `backend/tests/test_index_storage.py` covers all three formats). Pickled indexes saved
+  before 2.0.0 still load, through a **data-only unpickler** that maps the only two
+  classes they contain to inert stand-ins and refuses everything else, so no class code
+  runs.
 - *Why:* existing PDF chats kept working through the change, with no migration and no
   re-upload. `backend/tests/test_faiss_codec.py` checks that an old blob and the new format
   load identically (IDs, text, metadata, every vector, search results) and that a tampered
@@ -485,8 +488,8 @@ sources from both files. For Image Query, use `examples/lumen_ridge_harvest_char
 **4. Tests and lint**
 
 ```bash
-cd backend && pytest              # 125 passed
-cd frontend && npm test           # 53 passed, 12 files
+cd backend && pytest              # 135 passed
+cd frontend && npm test           # 56 passed, 13 files
 ```
 
 Counts are from 2026-10-31. Neither suite needs keys or a network: every external service
@@ -543,7 +546,8 @@ The index is [docs/README.md](docs/README.md).
   worked example and a glossary.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): request lifecycles, deployment and the
   security model.
-- [docs/releases/v2.0.0.md](docs/releases/v2.0.0.md): release notes for 2.0.0.
+- [docs/releases/](docs/releases/): release notes for [2.0.0](docs/releases/v2.0.0.md) and
+  [2.0.1](docs/releases/v2.0.1.md).
 - [SECURITY.md](SECURITY.md): reporting a vulnerability, secrets, and what is stored.
 - [CONTRIBUTING.md](CONTRIBUTING.md): setup, tests, branch and commit style.
 
