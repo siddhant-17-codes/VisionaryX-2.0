@@ -1,20 +1,20 @@
 # Direct dependencies. Edit this file, then regenerate the lock:
 #   uv pip compile requirements.in --universal --python-version 3.12 -o requirements.txt
 fastapi==0.115.6
-uvicorn[standard]==0.29.0
-python-multipart==0.0.9
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
 
-pydantic==2.9.2
-pydantic-settings==2.6.1
+pydantic==2.14.1
+pydantic-settings==2.16.2
 
 google-genai==2.8.0
-langchain==0.3.21
-langchain-community==0.3.20
+langchain==0.3.30
+langchain-community==0.3.27
 
-faiss-cpu==1.13.0
-pypdf==4.1.0
-python-docx==1.1.2
-Pillow==11.1.0
+faiss-cpu==1.15.1
+pypdf==4.3.1
+python-docx==1.2.0
+Pillow==11.3.0
 
 huggingface_hub==2.4.0
 # Only Supabase's REST client is used (core/storage.py); the full supabase
