@@ -1,9 +1,10 @@
-.PHONY: install run build preview clean
+# Frontend targets. Run from frontend/. VITE_API_URL comes from frontend/.env.
+.PHONY: install dev build preview test lint clean
 
 install:
 	npm install
 
-run:
+dev:
 	npm run dev
 
 build:
@@ -12,6 +13,11 @@ build:
 preview:
 	npm run preview
 
+test:
+	npm test
+
+lint:
+	npm run lint
+
 clean:
-	rmdir /s /q node_modules 2>nul & echo node_modules removed.
-	rmdir /s /q dist 2>nul & echo dist removed.
+	rm -rf dist

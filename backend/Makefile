@@ -1,20 +1,28 @@
-.PHONY: install run dev clean logs
+# Backend targets. Run from backend/ with a Python 3.12 environment active.
+# Settings are read from backend/.env (copy .env.example first).
+.PHONY: install dev run test lint lock clean
+
+PYTHON ?= python
 
 install:
-	pip install -r requirements.txt
-
-run:
-	uvicorn main:app --host 127.0.0.1 --port 8000
+	$(PYTHON) -m pip install -r requirements-dev.txt
 
 dev:
-	uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+	$(PYTHON) -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+
+run:
+	$(PYTHON) -m uvicorn main:app --host 127.0.0.1 --port 8000
+
+test:
+	$(PYTHON) -m pytest
+
+lint:
+	$(PYTHON) -m ruff check .
+
+# After editing requirements.in: regenerate the fully pinned requirements.txt.
+lock:
+	uv pip compile requirements.in --universal --python-version 3.12 -o requirements.txt
 
 clean:
-	rmdir /s /q storage\chats 2>nul & mkdir storage\chats
-	rmdir /s /q storage\documents 2>nul & mkdir storage\documents
-	rmdir /s /q faiss_index 2>nul & mkdir faiss_index
-	rmdir /s /q logs 2>nul & mkdir logs
-	@echo Storage and logs cleared.
-
-logs:
-	type logs\visionaryx_*.log 2>nul || echo No logs found.
+	rm -rf .pytest_cache .ruff_cache
+	find . -name __pycache__ -type d -prune -exec rm -rf {} +
