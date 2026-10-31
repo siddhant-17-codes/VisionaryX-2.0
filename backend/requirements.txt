@@ -33,9 +33,7 @@ click==8.5.0
     #   huggingface-hub
     #   uvicorn
 colorama==0.4.6 ; sys_platform == 'win32'
-    # via
-    #   tqdm
-    #   uvicorn
+    # via tqdm
 cryptography==50.0.2
     # via google-auth
 dataclasses-json==0.6.7
@@ -105,11 +103,11 @@ jsonpatch==1.38
     # via langchain-core
 jsonpointer==3.6
     # via jsonpatch
-langchain==0.3.21
+langchain==0.3.30
     # via
     #   -r requirements.in
     #   langchain-community
-langchain-community==0.3.20
+langchain-community==0.3.27
     # via -r requirements.in
 langchain-core==0.3.86
     # via
@@ -147,7 +145,7 @@ packaging==25.0
     #   langchain-core
     #   langsmith
     #   marshmallow
-pillow==11.1.0
+pillow==11.3.0
     # via -r requirements.in
 postgrest==2.33.0
     # via -r requirements.in
@@ -177,15 +175,15 @@ pydantic-settings==2.16.2
     # via
     #   -r requirements.in
     #   langchain-community
-pypdf==4.1.0
+pypdf==4.3.1
     # via -r requirements.in
-python-docx==1.1.2
+python-docx==1.2.0
     # via -r requirements.in
 python-dotenv==1.2.4
     # via
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.9
+python-multipart==0.0.32
     # via -r requirements.in
 pyyaml==6.0.2
     # via
@@ -250,7 +248,7 @@ urllib3==2.8.0
     # via requests
 uuid-utils==0.19.0
     # via langchain-core
-uvicorn==0.29.0
+uvicorn==0.54.0
     # via -r requirements.in
 uvloop==0.23.0 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
     # via uvicorn
