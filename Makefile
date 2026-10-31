@@ -1,33 +1,36 @@
-.PHONY: install run-backend run-frontend dev clean help
-
-install:
-	cd backend && pip install -r requirements.txt
-	cd frontend && npm install
-
-run-backend:
-	cd backend && uvicorn main:app --host 127.0.0.1 --port 8000 --reload
-
-run-frontend:
-	cd frontend && npm run dev
-
-dev:
-	@echo Starting VisionaryX 2.0 backend and frontend...
-	@start /B cmd /C "cd backend && uvicorn main:app --host 127.0.0.1 --port 8000 --reload > ../logs/backend.log 2>&1"
-	@timeout /t 3 /nobreak > nul
-	@start /B cmd /C "cd frontend && npm run dev > ../logs/frontend.log 2>&1"
-	@echo Backend running on http://127.0.0.1:8000
-	@echo Frontend running on http://localhost:5173
-	@echo Logs: logs/backend.log and logs/frontend.log
-	@echo Press Ctrl+C in each window to stop.
-
-clean:
-	cd backend && $(MAKE) clean
-	cd frontend && $(MAKE) clean
+# VisionaryX 2.0. Needs GNU make and a POSIX shell: macOS, Linux, or Git Bash / WSL on Windows.
+.PHONY: help install dev run-backend run-frontend test lint clean
 
 help:
-	@echo VisionaryX 2.0 available commands:
-	@echo   make install          Install all dependencies
-	@echo   make run-backend      Start FastAPI backend on port 8000
-	@echo   make run-frontend     Start React frontend on port 5173
-	@echo   make dev              Start both backend and frontend together
-	@echo   make clean            Clear storage, logs, build artifacts
+	@echo "make install       Install backend (Python 3.12) and frontend dependencies"
+	@echo "make dev           Run backend (:8000) and frontend (:5173) together; Ctrl+C stops both"
+	@echo "make run-backend   Run only the FastAPI backend with reload"
+	@echo "make run-frontend  Run only the Vite dev server"
+	@echo "make test          Backend (pytest) and frontend (Vitest) tests"
+	@echo "make lint          ruff and ESLint"
+	@echo "make clean         Remove caches and build output"
+
+install:
+	$(MAKE) -C backend install
+	$(MAKE) -C frontend install
+
+dev:
+	$(MAKE) -j2 run-backend run-frontend
+
+run-backend:
+	$(MAKE) -C backend dev
+
+run-frontend:
+	$(MAKE) -C frontend dev
+
+test:
+	$(MAKE) -C backend test
+	$(MAKE) -C frontend test
+
+lint:
+	$(MAKE) -C backend lint
+	$(MAKE) -C frontend lint
+
+clean:
+	$(MAKE) -C backend clean
+	$(MAKE) -C frontend clean

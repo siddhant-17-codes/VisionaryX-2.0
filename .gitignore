@@ -15,14 +15,10 @@ env/
 .env.*
 !.env.example
 
-# ── VisionaryX runtime files ──────────────────────────────────────────────
+# ── Legacy local data (from before Supabase; the app no longer writes it) ──
+backend/storage/
 backend/faiss_index/
 backend/logs/
-backend/storage/chats/*.json
-backend/storage/documents/*/
-!backend/storage/.gitkeep
-!backend/storage/chats/.gitkeep
-!backend/storage/documents/.gitkeep
 
 # ── Future roadmap (private) ──────────────────────────────────────────────
 FUTURE.md
@@ -53,6 +49,14 @@ coverage/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.cache/
+
+# ── Browser tests and demo recordings ─────────────────────────────────────
+playwright-report/
+test-results/
+*.mp4
+*.mov
+*.webm
 
 # ── Personal files (never commit) ─────────────────────────────────────────
 docs/interview_prep/
