@@ -1,5 +1,9 @@
-# Weekly dependency update pull requests. They are reviewed and merged by hand,
-# never automatically: each one must pass CI and be checked by the maintainer.
+# Weekly dependency updates, reviewed and merged by hand.
+#
+# Minor and patch updates are grouped into one pull request per ecosystem.
+# Major (semver-major) updates are ignored on purpose: each one is planned and done
+# deliberately, with its own branch, migration notes and tests, rather than merged
+# from an automatic pull request.
 version: 2
 updates:
   - package-ecosystem: "pip"
@@ -7,14 +11,35 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      pip-minor-and-patch:
+        update-types: ["minor", "patch"]
+        # FastAPI is 0.x, so its "minor" releases can break, and recent ones require
+        # Starlette 1.x. It gets its own pull request instead of riding in the group.
+        exclude-patterns: ["fastapi", "starlette"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      actions-minor-and-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
