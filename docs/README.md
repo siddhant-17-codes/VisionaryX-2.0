@@ -15,9 +15,6 @@ Start with the [project README](../README.md) for what VisionaryX does and how t
 Other files here:
 
 - [`assets/`](assets/): the demo GIF and screenshots used in the README.
-- `VisionaryX_visuals.html` and `VisionaryX_visuals.jpg`: an early design mock-up of the
-  interface, made before the 2026 revival. Some of its text (such as "sessions saved to
-  disk" and the fixed "Gemini 2.5" labels) no longer matches the app.
 
 Helper scripts:
 
