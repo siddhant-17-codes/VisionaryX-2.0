@@ -139,12 +139,19 @@ def ping_database():
 
 # ── FAISS persistence ─────────────────────────────────────────────────────
 
+# The index_b64 column (name kept so no migration is needed) holds one of:
+#   - the codec's JSON as plain text: written since 2.0.1, a single encoding;
+#   - base64 of that JSON: written by 2.0.0;
+#   - base64 of a legacy pickle: written before 2.0.0, read as data only by faiss_codec.
+# Base64 never contains "{", so a value starting with "{" is always the plain JSON.
+
 def save_faiss_index(session_id: str, owner_id: str, index_bytes: bytes):
-    b64 = base64.b64encode(index_bytes).decode("utf-8")
+    if not index_bytes.startswith(b"{"):
+        raise ValueError("save_faiss_index expects the JSON produced by faiss_codec.dumps")
     _get_client().table("faiss_indexes").upsert({
         "session_id": session_id,
         "owner_id": owner_id,
-        "index_b64": b64,
+        "index_b64": index_bytes.decode("utf-8"),
         "updated_at": _now(),
     }).execute()
     logger.info(f"FAISS index saved: {session_id}")
@@ -157,7 +164,10 @@ def load_faiss_index(session_id: str, owner_id: str) -> bytes | None:
     if not res.data:
         return None
     logger.info(f"FAISS index loaded: {session_id}")
-    return base64.b64decode(res.data[0]["index_b64"])
+    stored: str = res.data[0]["index_b64"]
+    if stored.startswith("{"):
+        return stored.encode("utf-8")
+    return base64.b64decode(stored)
 
 
 def faiss_index_exists(session_id: str, owner_id: str) -> bool:

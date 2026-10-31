@@ -97,6 +97,6 @@ def test_upload_stores_the_new_format(client, supabase):
     res = client.post("/api/pdf/upload", files=[
         ("files", ("lumen_ridge_report.pdf", fixture_bytes("lumen_ridge_report.pdf"), "application/pdf"))])
     assert res.status_code == 200
-    import base64
-    stored = base64.b64decode(supabase.db["faiss_indexes"][0]["index_b64"])
-    assert stored.startswith(b"{")
+    # Stored as the codec's JSON text, with no extra base64 layer (2.0.1).
+    stored = supabase.db["faiss_indexes"][0]["index_b64"]
+    assert stored.startswith('{"format": "visionaryx-faiss/1"')
