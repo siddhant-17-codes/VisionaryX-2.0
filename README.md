@@ -395,6 +395,10 @@ with the backend on Render. Everything runs on free tiers, which sets its limits
 - **Scanned PDFs** without a text layer are not supported (there is no OCR).
 - **Rate limits are in memory,** which is right for one Render instance; they reset when it
   restarts.
+- **The keep-alive needs repository activity.** GitHub disables scheduled workflows after
+  60 days without activity in the repository. If that happens, re-enable *Keep Supabase
+  alive* in the Actions tab (or run it by hand), or Supabase will pause the database again
+  after a week without traffic.
 
 ## Roadmap
 
