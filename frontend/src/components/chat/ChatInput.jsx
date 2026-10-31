@@ -47,6 +47,7 @@ export default function ChatInput({ onSend, loading, placeholder = "Ask Visionar
         <button
           onClick={handleSubmit}
           disabled={loading || !value.trim()}
+          aria-label="Send message"
           className="bg-primary text-linen border-none rounded-lg p-2 mb-0.5
                      hover:bg-orange-500 active:scale-95 transition-all duration-150
                      disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex-shrink-0"

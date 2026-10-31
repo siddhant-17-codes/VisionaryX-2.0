@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef } from "react";
 import { wakeServer } from "../api/health";
 import Navbar from "../components/layout/Navbar";
@@ -118,10 +118,9 @@ export default function Landing() {
         {/* Single column on mobile, two columns on desktop */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl mx-auto">
           {features.map(({ Icon, iconBg, iconBorder, iconColor, badge, badgeClass, title, desc, tech, route }) => (
-            <div key={title}
-                 onClick={() => navigate(route)}
-                 className="bg-surface border border-border rounded-xl p-5 relative overflow-hidden
-                            hover:border-primary transition-colors cursor-pointer group">
+            <Link key={title} to={route}
+                  className="block bg-surface border border-border rounded-xl p-5 relative overflow-hidden
+                             hover:border-primary focus-visible:border-primary transition-colors cursor-pointer group">
               <div className="flex items-start justify-between mb-3">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
                      style={{ background: iconBg, border: `1px solid ${iconBorder}` }}>
@@ -133,9 +132,10 @@ export default function Landing() {
               <p className="text-[11px] text-hint leading-relaxed mb-3">{desc}</p>
               <div className="flex justify-between items-center pt-3 border-t border-border">
                 <span className="text-[10px] text-dim">{tech}</span>
-                <span className="text-[11px] text-primary font-bold group-hover:translate-x-1 transition-transform">→</span>
+                <span className="text-[11px] text-primary font-bold group-hover:translate-x-1 transition-transform"
+                      aria-hidden="true">→</span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </section>
