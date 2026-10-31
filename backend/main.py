@@ -26,7 +26,7 @@ logger.info(f"CORS allowed origins: {settings.origins_list}")
 app = FastAPI(
     title="VisionaryX 2.0 API",
     description="Intelligent document querying, image analysis, and AI generation platform.",
-    version="2.0.0",
+    version="2.0.1",
 )
 
 
@@ -110,7 +110,7 @@ app.include_router(sessions_router)
 
 @app.get("/health", tags=["system"])
 async def health():
-    return {"status": "ok", "version": "2.0.0"}
+    return {"status": "ok", "version": "2.0.1"}
 
 
 # Plain def so FastAPI runs the blocking query in its threadpool. The keep-alive
