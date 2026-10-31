@@ -138,7 +138,7 @@ export default function Sidebar({ onClose }) {
       {/* Footer */}
       <div className="px-4 py-3 border-t border-border mt-auto">
         <div className="text-[9px] text-dim text-center">
-          Model: <span className="text-cyan font-bold">Gemini 2.5 Flash</span>
+          Your history is saved in this browser only.
         </div>
       </div>
 

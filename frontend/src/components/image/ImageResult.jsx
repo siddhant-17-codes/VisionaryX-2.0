@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 
-export default function ImageResult({ answer }) {
+export default function ImageResult({ answer, model = null }) {
   if (!answer) return null;
   return (
     <div className="bg-base border border-border rounded-xl p-4 mt-4">
@@ -8,6 +8,7 @@ export default function ImageResult({ answer }) {
       <div className="text-sm text-muted leading-relaxed">
         <ReactMarkdown>{answer}</ReactMarkdown>
       </div>
+      {model && <p className="text-[9px] text-hint mt-2">Answered by {model}</p>}
     </div>
   );
 }

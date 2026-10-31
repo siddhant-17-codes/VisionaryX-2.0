@@ -179,3 +179,22 @@ def test_cleaning_keeps_paragraph_breaks_for_the_splitter():
     from core.chunker import _clean_text
     raw = "Title  line\t here\r\n\n\n\nFirst   paragraph.\n  Second\x00line."
     assert _clean_text(raw) == "Title line here\n\nFirst paragraph.\nSecond line."
+
+
+def test_suggested_questions_use_the_lite_chain_only(client, monkeypatch, gemini):
+    import services.gemini_service
+    from tests.conftest import FakeGemini
+    lite = FakeGemini()
+    monkeypatch.setattr(services.gemini_service, "_suggest_chain", [("fake-lite", lite)])
+    before = len(gemini.prompts)
+
+    res = client.post("/api/pdf/upload", files=[
+        ("files", ("lumen_ridge_report.pdf", fixture_bytes("lumen_ridge_report.pdf"), PDF))])
+    assert res.json()["questions"] == ["What is A?", "What is B?", "What is C?"]
+    assert len(lite.prompts) == 1
+    assert len(gemini.prompts) == before  # the main chain was not used
+
+
+def test_pdf_answer_names_the_model(client, uploaded_pdf):
+    res = client.post("/api/pdf/query", json={"session_id": uploaded_pdf.session_id, "question": "harvest"})
+    assert res.json()["model"] == "fake-primary"

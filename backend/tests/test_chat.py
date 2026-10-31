@@ -62,3 +62,16 @@ def test_a_saved_turn_costs_one_read_and_one_write(client, supabase, monkeypatch
 
     client.post("/api/chat", json={"message": "hi", "chat_session_id": sid})
     assert ops == ["select", "update"]
+
+
+def test_reply_names_the_model_that_answered(client, use_chain):
+    from tests.conftest import FakeGemini, api_error
+    primary, fallback = FakeGemini(), FakeGemini(answer="from the fallback")
+    primary.error = api_error(429, "RESOURCE_EXHAUSTED")
+    use_chain(primary, fallback)
+    sid = client.post("/api/sessions", json={"mode": "chat"}).json()["id"]
+
+    res = client.post("/api/chat", json={"message": "hi", "chat_session_id": sid}).json()
+    assert res == {"reply": "from the fallback", "model": "fake-1"}
+    # Kept with the saved answer, so a restored conversation still shows it.
+    assert client.get(f"/api/sessions/{sid}").json()["messages"][1]["model"] == "fake-1"

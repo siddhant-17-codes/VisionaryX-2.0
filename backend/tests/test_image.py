@@ -16,6 +16,7 @@ def test_image_query_sends_prompt_and_image(client, gemini):
     )
     assert res.status_code == 200
     assert res.json()["answer"] == gemini.answer
+    assert res.json()["model"] == "fake-primary"
     part, prompt = gemini.contents[-1]
     assert prompt == "How many bars?"
     assert part.inline_data.mime_type == "image/png"

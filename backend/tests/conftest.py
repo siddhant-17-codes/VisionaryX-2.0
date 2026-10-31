@@ -181,6 +181,7 @@ def gemini(monkeypatch):
     fake = FakeGemini()
     import services.gemini_service
     monkeypatch.setattr(services.gemini_service, "_chain", [("fake-primary", fake)])
+    monkeypatch.setattr(services.gemini_service, "_suggest_chain", [("fake-lite", fake)])
     return fake
 
 

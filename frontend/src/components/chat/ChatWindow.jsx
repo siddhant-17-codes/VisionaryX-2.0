@@ -18,7 +18,7 @@ export default function ChatWindow({ messages, loading, error, onRetry, emptyTex
         <p className="text-center text-hint text-sm mt-20">{emptyText}</p>
       )}
       {messages.map((m, i) => (
-        <ChatBubble key={i} role={m.role} content={m.content} citations={m.citations} />
+        <ChatBubble key={i} role={m.role} content={m.content} citations={m.citations} model={m.model} />
       ))}
       {loading && <TypingIndicator />}
       {error && !loading && <ErrorCard error={error} onRetry={onRetry} />}

@@ -21,10 +21,10 @@ class PersistentChatRequest(BaseModel):
 @router.post("", response_model=ChatResponse, dependencies=[Depends(gemini_limit)])
 def send_message(request: PersistentChatRequest, owner: str = Depends(owner_id)):
     session = owned_session(request.chat_session_id, owner)
-    reply = chat(request.message, request.history)
+    generated = chat(request.message, request.history)
 
     if session:
-        append_turn(session, request.message, reply)
+        append_turn(session, request.message, generated.text, generated.model)
         logger.debug(f"Persisted chat to session: {request.chat_session_id}")
 
-    return ChatResponse(reply=reply)
+    return ChatResponse(reply=generated.text, model=generated.model)

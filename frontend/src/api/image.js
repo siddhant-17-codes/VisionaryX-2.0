@@ -4,7 +4,7 @@ export const queryImage = (file, prompt = "") => {
   const form = new FormData();
   form.append("file", file);
   form.append("prompt", prompt || "Describe this image in detail.");
-  return client.post("/api/image/query", form).then((r) => r.data.answer);
+  return client.post("/api/image/query", form).then((r) => r.data); // { answer, model }
 };
 
 export const generateImage = (prompt) =>

@@ -13,10 +13,7 @@ export default function Chat() {
       <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-sm font-bold text-linen">{sessionTitle}</h1>
-          <p className="text-[10px] text-hint mt-0.5">Memory enabled · session auto-saved</p>
-        </div>
-        <div className="flex gap-2">
-          <span className="badge-orange">Gemini 2.5</span>
+          <p className="text-[10px] text-hint mt-0.5">Memory enabled · saved in this browser</p>
         </div>
       </div>
       <ChatWindow messages={messages} loading={loading} error={error} onRetry={retry} />

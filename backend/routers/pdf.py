@@ -78,7 +78,7 @@ def query_pdf(request: PersistentPDFQueryRequest, owner: str = Depends(owner_id)
     result = query_documents(request.session_id, owner, request.question, request.history)
 
     if chat_session:
-        append_turn(chat_session, request.question, result.answer)
+        append_turn(chat_session, request.question, result.answer, result.model)
         logger.debug(f"Persisted PDF Q&A to session: {request.chat_session_id}")
 
     return result

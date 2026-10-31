@@ -7,4 +7,4 @@ export const sendMessage = (message, history = [], chatSessionId = null) =>
       history,
       chat_session_id: chatSessionId,
     })
-    .then((r) => r.data.reply);
+    .then((r) => r.data); // { reply, model }

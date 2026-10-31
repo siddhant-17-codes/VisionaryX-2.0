@@ -68,7 +68,7 @@ export function usePDF(restoreSessionId = null) {
       const history = updated.slice(0, -1);
       const data = await queryPDF(faissSessionRef.current, question, history, chatSessionRef.current);
       await reveal(data.answer, (shown) =>
-        setMessages([...updated, { role: "assistant", content: shown, citations: data.citations || [] }]));
+        setMessages([...updated, { role: "assistant", content: shown, citations: data.citations || [], model: data.model }]));
     } catch (e) { setError(e); }
     finally { setLoading(false); }
   }, []);
