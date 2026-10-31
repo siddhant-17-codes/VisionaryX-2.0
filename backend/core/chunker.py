@@ -38,7 +38,7 @@ def extract_chunks_from_pdf(file_bytes: bytes) -> list[Chunk]:
 
 
 def _safe_extract_text(page) -> str:
-    """Extract text from a PDF page with multiple fallback strategies."""
+    """Extract text from a PDF page, trying three pypdf strategies in turn."""
     # Strategy 1 — standard extraction
     try:
         text = page.extract_text()
@@ -55,24 +55,7 @@ def _safe_extract_text(page) -> str:
     except Exception:
         pass
 
-    # Strategy 3 — extract raw text parts individually
-    try:
-        parts = []
-        if hasattr(page, "_objects"):
-            for obj in page._objects:
-                try:
-                    if hasattr(obj, "get_text"):
-                        t = obj.get_text()
-                        if t:
-                            parts.append(t)
-                except Exception:
-                    continue
-        if parts:
-            return " ".join(parts)
-    except Exception:
-        pass
-
-    # Strategy 4 — extract with error ignore on encoding
+    # Strategy 3 — collect text fragments through a visitor, dropping undecodable characters
     try:
         visitor_text = []
         def visitor(text, cm, tm, fontdict, fontSize):

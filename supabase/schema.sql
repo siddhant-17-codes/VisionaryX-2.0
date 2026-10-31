@@ -25,7 +25,7 @@ create table if not exists public.sessions (
 -- One serialized FAISS index per PDF upload.
 create table if not exists public.faiss_indexes (
     session_id  text primary key,                 -- upsert target
-    index_b64   text not null,                    -- base64 of the JSON index (backend/core/faiss_codec.py); older rows: a pickle
+    index_b64   text not null,                    -- JSON index as text (core/faiss_codec.py); older rows: base64 of the JSON or of a pickle
     updated_at  text not null,
     owner_id    text                              -- SHA-256 of the browser's X-Client-Id
 );
