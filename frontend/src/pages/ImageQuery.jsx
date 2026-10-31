@@ -21,7 +21,7 @@ export default function ImageQuery() {
     <div className="max-w-2xl mx-auto px-6 py-10">
       <div className="mb-6">
         <h1 className="text-sm font-bold text-linen">Image Query</h1>
-        <p className="text-[10px] text-hint mt-0.5">Upload an image · Ask anything · Gemini Vision responds</p>
+        <p className="text-[10px] text-hint mt-0.5">Upload an image · Ask about it · Google Gemini answers</p>
       </div>
       <ImageUploader onSelect={handleSelect} preview={preview} />
       <input

@@ -9,20 +9,20 @@ const features = [
     Icon: PDFIcon, iconBg: "#1E1008", iconBorder: "#3A2010", iconColor: "#FE7235",
     badge: "Hero feature", badgeClass: "badge-amber",
     title: "PDF Chat + RAG", route: "/workspace/pdf",
-    desc: "Upload PDF or DOCX. Adaptive relevance threshold. Every answer cites the file and page it came from.",
+    desc: "Upload PDF or DOCX. Adaptive relevance threshold. Citations are built from the retrieved chunks, deduplicated by file, page and section.",
     tech: "FAISS · LangChain · Gemini",
   },
   {
     Icon: ChatIcon, iconBg: "#1E1008", iconBorder: "#3A2010", iconColor: "#FE7235",
     title: "General Chat", route: "/workspace/chat",
-    desc: "Full conversation memory per turn. Conversations are saved for this browser. Start fresh anytime.",
-    tech: "Gemini 2.5 Flash",
+    desc: "Remembers the conversation (the last 40 messages). Conversations are saved for this browser. Start fresh anytime.",
+    tech: "Google Gemini · automatic fallback",
   },
   {
     Icon: ImageIcon, iconBg: "#060F1E", iconBorder: "#0D2040", iconColor: "#0077FF",
     title: "Image Query", route: "/workspace/image",
-    desc: "Upload any image and ask anything. Gemini Vision returns detailed structured analysis.",
-    tech: "Gemini Vision",
+    desc: "Upload an image and ask a question about it. Gemini answers from the image, or describes it in detail if you leave the question empty.",
+    tech: "Google Gemini · automatic fallback",
   },
   {
     Icon: SparkleIcon, iconBg: "#120A04", iconBorder: "#2A1800", iconColor: "#FEA735",
@@ -33,8 +33,8 @@ const features = [
 ];
 
 const strip = [
-  "Semantic chunking","Page-level citations","Persistent sessions",
-  "Multi-document RAG","Gemini Vision","Conversation memory",
+  "Recursive character chunking (1,000 chars, 150 overlap)","Citations from retrieved chunks","Chats saved per browser",
+  "Multi-document RAG","Image questions","Conversation memory",
   "FLUX image gen","FastAPI + React",
 ];
 
@@ -81,7 +81,7 @@ export default function Landing() {
           <div className="px-4">
             <div className="grid grid-cols-2 sm:grid-cols-4 max-w-xs sm:max-w-none sm:w-max mx-auto
                             border border-border rounded-xl bg-surface overflow-hidden">
-              {[["RAG","Core engine"],["FAISS","Vector search"],["2.5","Gemini Flash"],["FLUX","Image gen"]].map(([num,lbl], i) => (
+              {[["RAG","Core engine"],["FAISS","Vector search"],["Gemini","Auto fallback"],["FLUX","Image gen"]].map(([num,lbl], i) => (
                 <div key={lbl} className={`px-4 md:px-6 py-3 text-center border-border
                                            ${i % 2 === 0 ? "border-r" : ""} ${i < 2 ? "border-b sm:border-b-0" : ""}
                                            sm:border-r sm:last:border-r-0`}>
@@ -146,7 +146,7 @@ export default function Landing() {
         <div className="text-[10px] text-dim">
           Crafted with purpose by{" "}
           <span className="text-secondary font-semibold">Siddhant Thakur</span>
-          {" "}· FastAPI · React · Gemini 2.5 · FAISS · FLUX
+          {" "}· FastAPI · React · Google Gemini · FAISS · FLUX
         </div>
         <a href="https://github.com/siddhant-17-codes/VisionaryX-2.0"
            target="_blank" rel="noreferrer"
