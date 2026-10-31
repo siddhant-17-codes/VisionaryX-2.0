@@ -16,7 +16,10 @@ Built by **Siddhant Thakur** · [GitHub](https://github.com/siddhant-17-codes) �
 
 ![VisionaryX: a question across a PDF and a Word file, answered with four citations](docs/assets/visionaryx-demo.gif)
 
-<!-- VIDEO: the full walkthrough (chat, PDF and DOCX with citations, image query, text to image) goes here as a GitHub user-attachments URL. -->
+The full 79-second walkthrough, recorded on the live site: PDF Chat across a PDF and a
+Word file, General Chat, Image Query and Text to Image:
+
+https://github.com/user-attachments/assets/c9dcaeee-b7f1-4961-b965-6b8ca4d2f264
 
 **At a glance:** four AI features in one workspace · retrieval-augmented answers with
 file, page and section citations · runs entirely on free tiers (Vercel, Render, Supabase,
