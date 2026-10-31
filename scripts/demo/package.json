@@ -1,0 +1,14 @@
+{
+  "name": "visionaryx-demo-recorder",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Drives the real VisionaryX app with Playwright to record the README demo. Not part of the product.",
+  "type": "module",
+  "scripts": {
+    "record": "node record-demo.mjs",
+    "assets": "node make-assets.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
