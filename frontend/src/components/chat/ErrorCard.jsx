@@ -12,7 +12,7 @@ export default function ErrorCard({ error, onRetry }) {
     unavailable: { bg: "#1A0A04", border: "#3A1808", color: "#FEA735", symbol: "⚠" },
     request:   { bg: "#1A0A04", border: "#3A1808", color: "#FEA735", symbol: "!" },
     server:    { bg: "#1A0A04", border: "#3A1808", color: "#FE7235", symbol: "✕" },
-    unknown:   { bg: "#100D1A", border: "#2A2040", color: "#6B5E7A", symbol: "?" },
+    unknown:   { bg: "#100D1A", border: "#2A2040", color: "#A495B7", symbol: "?" },
   };
   const style = icons[parsed.type] || icons.unknown;
 

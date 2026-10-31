@@ -76,7 +76,7 @@ export default function Sidebar({ onClose }) {
           >
             {({ isActive }) => (
               <>
-                <Icon size={14} color={isActive ? "#FE7235" : "#4A3D5A"} />
+                <Icon size={14} color={isActive ? "#FE7235" : "#A495B7"} />
                 <span className="flex-1">{label}</span>
                 <span
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"

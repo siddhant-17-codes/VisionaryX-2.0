@@ -20,7 +20,7 @@ export default function ImageUploader({ onSelect, preview }) {
         <img src={preview} alt="preview" className="w-full max-h-64 object-contain p-2" />
       ) : (
         <div className="p-8 flex flex-col items-center gap-3">
-          <ImageIcon size={28} color="#3D3050" />
+          <ImageIcon size={28} color="#947FB2" />
           <p className="text-sm text-muted">Click to upload an image</p>
           <p className="text-xs text-hint">JPG, PNG supported</p>
         </div>

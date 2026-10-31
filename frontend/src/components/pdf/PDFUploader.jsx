@@ -23,7 +23,7 @@ export default function PDFUploader({ onUpload, loading }) {
                  flex flex-col items-center gap-3"
     >
       <input ref={ref} type="file" accept=".pdf,.docx" multiple onChange={handleChange} className="hidden" />
-      <UploadIcon size={28} color="#3D3050" />
+      <UploadIcon size={28} color="#947FB2" />
       <div>
         <p className="text-sm font-medium text-muted">
           {loading ? "Processing…" : "Click or drag to upload"}
