@@ -18,6 +18,7 @@ test:
 
 lint:
 	$(PYTHON) -m ruff check .
+	$(PYTHON) -m ruff check --config pyproject.toml ../scripts
 
 # After editing requirements.in: regenerate the fully pinned requirements.txt.
 lock:

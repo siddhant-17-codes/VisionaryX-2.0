@@ -23,14 +23,17 @@ https://github.com/user-attachments/assets/c9dcaeee-b7f1-4961-b965-6b8ca4d2f264
 
 **At a glance:** four AI features in one workspace · retrieval-augmented answers with
 file, page and section citations · runs entirely on free tiers (Vercel, Render, Supabase,
-Gemini, Cloudflare Workers AI) · 123 backend and 53 frontend tests, all passing
+Gemini, Cloudflare Workers AI) · 125 backend and 53 frontend tests, all passing
 (2026-10-31).
 
 **Contents:** [Problem](#the-problem) · [What it does](#what-it-does) ·
 [Architecture](#architecture) · [Stack](#tech-stack) ·
+[Reading the code](#how-to-read-this-codebase) ·
 [RAG and citations](#how-rag-and-citations-work) ·
+[Algorithms](#algorithms-and-techniques) ·
 [Engineering decisions](#engineering-decisions) · [Run it locally](#run-it-locally) ·
-[Status and limits](#status-and-limits) · [Roadmap](#roadmap)
+[Status and limits](#status-and-limits) · [Roadmap](#roadmap) ·
+[Documentation](#documentation)
 
 ---
 
@@ -46,9 +49,9 @@ there, and shows those passages as numbered sources under the answer: which file
 page of a PDF or which heading of a Word document, and the text itself. You can check an
 answer in seconds instead of trusting it.
 
-It started in 2024 as a university minor project. Version 2.0 rebuilt it as a full-stack
-app, and in October 2026 I revived the deployment, which had stopped working, and audited
-and hardened it (see [Engineering decisions](#engineering-decisions)).
+Originally built as a team project during my MCA, where I led the development; I later
+rebuilt it as VisionaryX 2.0 and, in October 2026, revived and hardened it on my own.
+What the revival involved is under [Engineering decisions](#engineering-decisions).
 
 ## What it does
 
@@ -103,7 +106,8 @@ flowchart LR
 
 There are no accounts. The browser creates a random ID once, keeps it in `localStorage`
 and sends it as `X-Client-Id`; the backend stores only its SHA-256 and shows each browser
-only its own conversations.
+only its own conversations. Each feature's request lifecycle, the deployment and the
+security model are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```text
 backend/     FastAPI app: routers/ (HTTP), services/ (Gemini, RAG, images), core/ (chunking,
@@ -111,7 +115,9 @@ backend/     FastAPI app: routers/ (HTTP), services/ (Gemini, RAG, images), core
 frontend/    React app: pages/, components/, hooks/, api/ (axios client), utils/
 supabase/    schema.sql for a fresh project
 examples/    fictional files to try it with (used in the demo)
-scripts/     demo/ (the Playwright recorder for the video above), checks/ (mobile layout check)
+scripts/     rag_walkthrough.py (the RAG pipeline, stage by stage), demo/ (the recorder for the
+             video above), checks/ (mobile layout check)
+docs/        architecture, the RAG deep dive, release notes, README assets
 ```
 
 ## Tech stack
@@ -126,6 +132,28 @@ scripts/     demo/ (the Playwright recorder for the video above), checks/ (mobil
 | Storage | Supabase Postgres through its REST API (`postgrest`), row-level security on |
 | Image generation | FLUX.1 [schnell] on Cloudflare Workers AI, Hugging Face Inference Providers as fallback |
 | Tests and CI | pytest, Vitest + Testing Library, ruff, ESLint; GitHub Actions on every push |
+
+## How to read this codebase
+
+In this order, each file builds on the ones before it:
+
+1. [`backend/main.py`](backend/main.py): the app, its middleware (size limit, error catch, CORS, request log) and the health checks.
+2. [`backend/routers/deps.py`](backend/routers/deps.py): the anonymous client ID, its SHA-256, the ownership check and upload caps.
+3. [`backend/routers/pdf.py`](backend/routers/pdf.py): the two PDF Chat routes, upload and question.
+4. [`backend/core/chunker.py`](backend/core/chunker.py): PDF and DOCX text extraction and chunking.
+5. [`backend/core/embeddings.py`](backend/core/embeddings.py): Gemini embeddings and batching.
+6. [`backend/core/vector_store.py`](backend/core/vector_store.py): building and loading a FAISS index.
+7. [`backend/services/rag_service.py`](backend/services/rag_service.py): retrieval, the adaptive threshold and citations.
+8. [`backend/services/gemini_service.py`](backend/services/gemini_service.py): the model chain, prompts and typed errors.
+9. [`backend/core/faiss_codec.py`](backend/core/faiss_codec.py): saving indexes as JSON and reading old pickles safely.
+10. [`backend/core/storage.py`](backend/core/storage.py): every Supabase read and write, scoped by owner.
+11. [`backend/core/rate_limit.py`](backend/core/rate_limit.py): per-IP sliding-window limits.
+12. [`backend/services/image_service.py`](backend/services/image_service.py): image providers and the paused state.
+13. [`frontend/src/api/client.js`](frontend/src/api/client.js): one axios client; adds `X-Client-Id` and turns failures into typed errors.
+14. [`frontend/src/hooks/usePDF.js`](frontend/src/hooks/usePDF.js): the PDF Chat page's state, from upload to answer.
+15. [`frontend/src/components/pdf/CitationCard.jsx`](frontend/src/components/pdf/CitationCard.jsx): how a citation is shown.
+16. [`backend/tests/conftest.py`](backend/tests/conftest.py): how every external service is faked in tests.
+17. [`scripts/rag_walkthrough.py`](scripts/rag_walkthrough.py): the whole RAG pipeline in one script, printing each stage.
 
 ## How RAG and citations work
 
@@ -150,24 +178,113 @@ flowchart TB
     Upload ~~~ Ask
 ```
 
-1. **Extraction keeps the location.** A PDF is read page by page
-   (`backend/core/chunker.py`, with several fallbacks for awkward PDFs); a Word file has no
-   pages, so each chunk is labelled with the heading it falls under, and tables are read in
-   order, one row per line. A scanned PDF with no text layer is refused with a clear
-   message rather than indexed empty.
-2. **Chunks carry metadata.** Each chunk keeps its file name, page (or 0 for DOCX) and
-   section, and is embedded with `gemini-embedding-001` (`backend/core/embeddings.py`).
+What happens when you ask a question (`POST /api/pdf/query`):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Browser
+    participant R as routers/pdf.py
+    participant S as rag_service.py
+    participant DB as Supabase
+    participant G as Gemini
+
+    B->>R: question + X-Client-Id
+    R->>R: rate limit, owner = SHA-256(id), 404 if the chat is not yours
+    R->>S: query_documents
+    S->>DB: load this owner's FAISS index (JSON)
+    S->>G: embed the question (RETRIEVAL_QUERY)
+    S->>S: 5 nearest chunks, keep distance ≤ min(1.4 × best, 2.0)
+    S->>S: one citation per (file, page, section)
+    S->>G: system instruction + history + kept chunks + question
+    G-->>S: answer + the model that wrote it
+    S-->>B: answer, citations, "Answered by …"
+```
+
+1. **Extraction keeps the location.** A PDF is read page by page, with fallbacks for
+   awkward layouts; a Word file has no pages, so each chunk is labelled with the heading
+   it falls under, and tables are read in order, one row per line. A scanned PDF with no
+   text layer is refused with a clear message rather than indexed empty.
+2. **Chunks never cross a page or a section,** so each one has an exact location.
 3. **Retrieval adapts to the question.** The five nearest chunks are fetched, and only
    those within 1.4× of the best distance are kept, so one strong match is not diluted by
-   four weak ones (`_adaptive_threshold` in `backend/services/rag_service.py`). If the
-   filter would leave nothing, the top two are used.
-4. **The model is told to stay inside the context.** The rules go in a system
-   instruction: answer only from the context, and say "This information is not available
-   in the uploaded documents" otherwise (`backend/services/gemini_service.py`).
-5. **Citations come from retrieval, not from the model.** One card per distinct (file,
-   page, section), built from the chunks that were actually sent, so a citation can never
-   be invented. With several files, "page 1" alone would be ambiguous, so every card names
-   its file.
+   weaker ones. If even the best is too far (above 2.0), the top two are used anyway.
+4. **The model is told to stay inside the context.** A system instruction says to answer
+   only from the context, and to say "This information is not available in the uploaded
+   documents" otherwise.
+5. **Citations come from retrieval, not from the model.** They are built from the chunks
+   that were sent, before the model answers, so a citation card can never point to a
+   passage that does not exist.
+
+**Key numbers**, all from the code:
+
+| | |
+|---|---|
+| Chunk size and overlap | 1,000 and 150 characters |
+| Embedding model and size | `gemini-embedding-001`, 3,072 dimensions, unit-length vectors |
+| Index | `faiss.IndexFlatL2`: exact search, squared Euclidean distance |
+| Chunks fetched per question | 5 |
+| Kept if distance ≤ | min(1.4 × best distance, 2.0) |
+| History sent with a question | last 40 messages |
+| Upload limits | 5 files, 10 MB each |
+| Citation excerpt | first 200 characters of the chunk |
+
+The full walk-through, with a worked example on real distances and a glossary, is in
+**[docs/RAG_DEEP_DIVE.md](docs/RAG_DEEP_DIVE.md)**.
+
+## Algorithms and techniques
+
+Every row is read from the code; techniques the project does not use are listed as such
+under [What would change at a larger scale](#what-would-change-at-a-larger-scale).
+N = chunks in a chat's index, d = 3,072 (embedding dimensions), k = 5.
+
+| Stage | Algorithm or technique | Key parameters | Complexity | Why this choice | File |
+|---|---|---|---|---|---|
+| PDF text extraction | Page-by-page extraction with ordered fallbacks (pypdf standard mode, layout mode, a text-visitor callback), then regex clean-up that keeps line breaks | Pages numbered from 1; blank pages skipped; no text anywhere → refused | O(size of the file) | The page number becomes the citation; fallbacks recover text from awkward layouts | `backend/core/chunker.py` |
+| DOCX text extraction | In-order walk of paragraphs and tables; `Heading*` styles open a section; table rows read cell by cell, merged cells de-duplicated, joined with ` \| ` | Page 0, section = heading | O(paragraphs + table cells) | Word files have no pages; headings give a location to cite | `backend/core/chunker.py` |
+| Chunking | Recursive character splitting with separator priority (LangChain `RecursiveCharacterTextSplitter`), run separately on each page or section | 1,000 characters, 150 overlap; separators `\n\n`, `\n`, `. `, space, then single characters | Roughly linear in text length per separator level (at most 5 levels) | Chunks end at the most natural boundary and never cross a page or section | `backend/core/chunker.py` |
+| Embeddings | Dense transformer embeddings with asymmetric task types | `gemini-embedding-001`, 3,072 dimensions; `RETRIEVAL_DOCUMENT` for chunks, `RETRIEVAL_QUERY` for questions; vectors arrive with length 1 (not normalised by the app); batches of ≤ 100 texts and ~20,000 tokens | ⌈N / 100⌉ API calls per upload, 1 per question | Questions land near the passages that answer them; same settings as before the SDK change, so old indexes still match | `backend/core/embeddings.py` |
+| Vector index | Exact k-nearest-neighbour search, FAISS `IndexFlatL2` (brute force, no training, no compression) | Squared Euclidean distance; for unit vectors d = 2 − 2·cos θ | Build O(N·d); search O(N·d) per question; 12,288 bytes per vector | Each chat's corpus is small (the worked example has N = 9), so exact search takes milliseconds and never misses a match | `backend/core/vector_store.py` |
+| Retrieval filtering | Top-k, then a relative (adaptive) distance threshold, with a top-2 fallback | k = 5; keep distance ≤ min(1.4 × best, 2.0) | O(k) | Adapts to each question; a fixed cut-off is too strict for vague questions and too loose for precise ones | `backend/services/rag_service.py` |
+| Prompt grounding | System instruction plus a context block | Kept chunks in distance order, separated by `---` lines (not numbered); `Context: … Question: …`; last 40 history messages as real turns | O(context length) | Rules in the system instruction, sources in the turn; the model has an exact sentence for "not in the documents" | `backend/services/gemini_service.py` |
+| Citation construction | Built from the retrieved chunks, de-duplicated with a set keyed on (file, page, section) | Excerpt = first 200 characters | O(k) | Cards cannot be hallucinated; the file name disambiguates "page 1" across files | `backend/services/rag_service.py` |
+| Index persistence | JSON codec: `faiss.serialize_index` bytes in base64, plus chunk texts and metadata; old pickles read by an allow-list unpickler that maps two classes to inert stand-ins | Format `visionaryx-faiss/1`; stored base64 in a text column | O(N·d) | Loading a row can no longer run code, and indexes saved before the change still load | `backend/core/faiss_codec.py` |
+| Client ID hashing | SHA-256 of a random browser ID | ID: 16–64 of `A–Z a–z 0–9 _ -`; the browser makes 32 hex characters | O(1) | A stored hash cannot be replayed as the header | `backend/routers/deps.py` |
+| Rate limiting | Sliding-window log per IP (a deque of timestamps) | 20/min Gemini routes, 5/min uploads, 10/min and 20/day images, 60/min session calls | Amortised O(1) per request; memory O(limit) per IP | Exact limits with no burst at window edges; one instance, so memory is enough | `backend/core/rate_limit.py` |
+| Model fallback | Ordered failover chain | `gemini-2.5-flash` → `gemini-3.5-flash-lite` → `gemini-3.1-flash-lite`; next on 429, 404, 500, 503, 504 or timeout; 30 s per attempt, SDK retries off | At most 3 attempts | Each model has its own free quota | `backend/services/gemini_service.py` |
+| Image quota pause | A time-based circuit breaker | All providers out of quota → no calls until 00:00 UTC (Hugging Face alone: 1 hour); 503 with `Retry-After` | O(1) | Stops wasted calls and lets the page say when images are back | `backend/services/image_service.py` |
+
+### In plain words
+
+When you upload files, VisionaryX reads them page by page (or heading by heading in a Word
+file) and cuts the text into passages of up to 1,000 characters. Each passage is turned
+into a list of 3,072 numbers that captures its meaning, so passages about similar things
+get similar numbers. When you ask a question, the question is turned into numbers the same
+way, and the five passages with the closest numbers are found. Passages much further away
+than the best one are dropped. The rest are given to Gemini with the instruction to answer
+only from them, and the same passages are shown under the answer as its sources.
+
+### Under the hood
+
+The embeddings are dense vectors from a transformer model, with separate task types for
+stored passages and for questions. Search is exact k-nearest-neighbour over a flat FAISS
+index with squared Euclidean distance; because Gemini returns unit-length vectors, this
+ranks passages exactly as cosine similarity would. A flat index fits this project's scale:
+each chat has its own small corpus (at most 5 files), so comparing the question with every
+vector costs O(N·d), about 28,000 multiply-adds in the worked example and a few
+milliseconds even at 10,000 chunks. The adaptive threshold is relative to the best match
+rather than absolute, which suits a metric whose typical values shift with the documents
+and the wording of the question.
+
+### What would change at a larger scale
+
+These are **not used** in VisionaryX today; they are what a system with much more data
+would add. An approximate index (IVF or HNSW) or a vector database once one collection
+grows to hundreds of thousands of vectors. Hybrid search, combining BM25 keyword ranking
+with the vectors, for names and codes that embeddings blur. A reranking model over a
+larger candidate set. OCR for scanned PDFs. And an evaluation set measuring recall@k, so
+that a change to chunk size or the threshold is judged by numbers. Each is explained in
+[the deep dive](docs/RAG_DEEP_DIVE.md#10-limitations-and-what-production-systems-add).
 
 ## Engineering decisions
 
@@ -182,8 +299,9 @@ flowchart TB
 - *What I did:* added `GET /health/db`, which runs one tiny real query, and a GitHub
   Actions workflow that calls it every three days with retries for cold starts
   (`.github/workflows/keep-alive.yml`, `backend/main.py`), so Supabase sees activity and
-  never pauses. A rewrite in `frontend/vercel.json` serves the app for every route. I rotated every key (Supabase, Gemini, Hugging Face), which cut the stale
-  `-g44d` service off, and moved the backend to Supabase's new `sb_secret_` keys
+  never pauses. A rewrite in `frontend/vercel.json` serves the app for every route. I
+  rotated every key (Supabase, Gemini, Hugging Face), which cut the stale `-g44d` service
+  off, and moved the backend to Supabase's new `sb_secret_` keys
   (`backend/core/storage.py` calls the REST API directly because `supabase-py` 2.7 rejected
   them). Image generation moved to a new provider (decision 4).
 - *Why:* a portfolio demo that silently breaks is worse than none. Each failure now has
@@ -275,9 +393,12 @@ flowchart TB
   took 14.4 s during an upload.
 - *What I did:* per-IP sliding-window limits per minute: 20 for the Gemini routes
   together, 5 uploads, 10 images, 60 session calls (`backend/core/rate_limit.py`). The IP
-  comes from `CF-Connecting-IP`, which Cloudflare overwrites on every request to Render, so
-  it cannot be forged. Uploads are capped at 5 files of 10 MB and images at 8 MB, checked
-  from `Content-Length` before the body is parsed (`backend/routers/deps.py`). Route
+  comes from `CF-Connecting-IP`: [Render's own guide](https://render.com/articles/host-pocketbase-on-render)
+  says Cloudflare writes that header on every request to a Render web service and
+  overwrites whatever the caller sent. `X-Forwarded-For`, which a caller can pad, is only a
+  fallback, read from the right. Uploads are capped at 5 files of 10 MB and images at
+  8 MB, and a whole request over 51 MB is refused from its `Content-Length` before the
+  body is parsed (`backend/routers/deps.py`). Route
   handlers became plain `def`, which FastAPI runs in its thread pool.
 - *Why:* one visitor cannot use up the shared free quotas, and one slow request no longer
   blocks everyone else. `backend/tests/test_concurrency.py` runs a blocking chat next to
@@ -364,12 +485,13 @@ sources from both files. For Image Query, use `examples/lumen_ridge_harvest_char
 **4. Tests and lint**
 
 ```bash
-cd backend && pytest              # 123 passed
+cd backend && pytest              # 125 passed
 cd frontend && npm test           # 53 passed, 12 files
 ```
 
 Counts are from 2026-10-31. Neither suite needs keys or a network: every external service
-is faked. Lint: `ruff check .` in `backend/`, `npm run lint` in `frontend/`.
+is faked. Lint: `ruff check .` in `backend/` (and `ruff check --config pyproject.toml ../scripts`
+for the helper scripts), `npm run lint` in `frontend/`.
 
 With GNU make and a POSIX shell (macOS, Linux, Git Bash or WSL), the root
 [`Makefile`](./Makefile) wraps these: `make install`, `make dev` (backend and frontend
@@ -380,8 +502,9 @@ together), `make test`, `make lint`. `make help` lists them.
 **VisionaryX is live** at [visionaryx-dusky.vercel.app](https://visionaryx-dusky.vercel.app),
 with the backend on Render. Everything runs on free tiers, which sets its limits:
 
-- **Cold start.** Render stops the free backend after about 15 minutes without traffic;
-  the first request then takes up to a minute. The page says the server is waking up
+- **Cold start.** Render stops the free backend after 15 minutes without traffic; the
+  first request then takes about a minute
+  ([Render's FAQ](https://render.com/docs/faq)). The page says the server is waking up
   (after 3 s) instead of looking broken.
 - **Daily model quota.** About 20 answers a day come from `gemini-2.5-flash`; after that,
   lite models answer, and the UI shows which one. When every model's quota is used up, the
@@ -411,6 +534,18 @@ with the backend on Render. Everything runs on free tiers, which sets its limits
 3. **OCR for scanned PDFs.**
 4. **Optional sign-in** to see the same history on several devices, keeping anonymous use
    as the default.
+
+## Documentation
+
+The index is [docs/README.md](docs/README.md).
+
+- [docs/RAG_DEEP_DIVE.md](docs/RAG_DEEP_DIVE.md): RAG taught through this codebase, with a
+  worked example and a glossary.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): request lifecycles, deployment and the
+  security model.
+- [docs/releases/v2.0.0.md](docs/releases/v2.0.0.md): release notes for 2.0.0.
+- [SECURITY.md](SECURITY.md): reporting a vulnerability, secrets, and what is stored.
+- [CONTRIBUTING.md](CONTRIBUTING.md): setup, tests, branch and commit style.
 
 ## Licence
 
