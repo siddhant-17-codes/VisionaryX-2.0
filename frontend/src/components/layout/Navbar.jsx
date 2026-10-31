@@ -118,8 +118,8 @@ export default function Navbar({ onFeaturesClick }) {
             </div>
             {[
               { color:"#FE7235", title:"PDF Chat + RAG", steps:["Click PDF Chat in the sidebar","Upload one or more PDF or DOCX files","Wait for indexing — suggested questions appear automatically","Ask anything about your documents","Every answer cites its sources: the file, and the page or section"] },
-              { color:"#FE7235", title:"General Chat", steps:["Click Chat in the sidebar","Type any question and press Send","Conversation memory is maintained across turns","All sessions are saved — click Recent to revisit"] },
-              { color:"#0077FF", title:"Image Query", steps:["Click Image Query in the sidebar","Upload any JPG or PNG image","Optionally type a specific question","Click Analyse Image — Gemini Vision responds in detail"] },
+              { color:"#FE7235", title:"General Chat", steps:["Click Chat in the sidebar","Type any question and press Send","Conversation memory is maintained across turns","Chats are saved in this browser — click Recent to revisit"] },
+              { color:"#0077FF", title:"Image Query", steps:["Click Image Query in the sidebar","Upload a JPG, PNG, WebP or GIF image","Optionally type a specific question","Click Analyse Image — Gemini answers about the image (or describes it in detail)"] },
               { color:"#FEA735", title:"Text to Image", steps:["Click Text to Image in the sidebar","Describe what you want to see","Click Generate Image (usually a few seconds; pauses when the free daily quota is used up)","Download the result when ready"] },
             ].map(({ color, title, steps }) => (
               <div key={title} className="mb-6 last:mb-0">
