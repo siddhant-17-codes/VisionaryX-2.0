@@ -19,22 +19,23 @@ export default function ChatBubble({ role, content, citations = [] }) {
               h1: ({ children }) => <h1 className="text-base font-bold text-linen mb-2 mt-3">{children}</h1>,
               h2: ({ children }) => <h2 className="text-sm font-bold text-linen mb-2 mt-3">{children}</h2>,
               h3: ({ children }) => <h3 className="text-sm font-semibold text-[#FCF5EF] mb-1.5 mt-2">{children}</h3>,
-              ul: ({ children }) => <ul className="list-none space-y-1.5 mb-3 pl-1">{children}</ul>,
-              ol: ({ children }) => <ol className="list-none space-y-1.5 mb-3 pl-1 counter-reset-item">{children}</ol>,
-              li: ({ children }) => (
-                <li className="flex gap-2 text-[#C4B8D8] text-sm leading-relaxed">
-                  <span className="text-primary mt-0.5 flex-shrink-0">·</span>
-                  <span>{children}</span>
-                </li>
+              // Native list markers, so ordered lists keep their numbers (U4).
+              ul: ({ children }) => <ul className="list-disc space-y-1.5 mb-3 pl-5 marker:text-primary">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal space-y-1.5 mb-3 pl-5 marker:text-primary">{children}</ol>,
+              li: ({ children }) => <li className="text-[#C4B8D8] text-sm leading-relaxed pl-1">{children}</li>,
+              // react-markdown 9 no longer passes `inline`, so every code span used to
+              // become a block. Code is styled inline; `pre` restyles the code inside it.
+              code: ({ className, children }) => (
+                <code className={`bg-[#1C1628] text-[#FEA735] px-1.5 py-0.5 rounded text-xs font-mono ${className || ""}`}>
+                  {children}
+                </code>
               ),
-              code: ({ inline, children }) =>
-                inline ? (
-                  <code className="bg-[#1C1628] text-[#FEA735] px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
-                ) : (
-                  <pre className="bg-[#08060E] border border-border rounded-lg p-3 my-2 overflow-x-auto">
-                    <code className="text-xs font-mono text-[#C4B8D8] leading-relaxed">{children}</code>
-                  </pre>
-                ),
+              pre: ({ children }) => (
+                <pre className="bg-[#08060E] border border-border rounded-lg p-3 my-2 overflow-x-auto
+                                [&>code]:bg-transparent [&>code]:p-0 [&>code]:text-[#C4B8D8] [&>code]:leading-relaxed">
+                  {children}
+                </pre>
+              ),
               blockquote: ({ children }) => (
                 <blockquote className="border-l-2 border-primary pl-4 my-2 text-muted italic">{children}</blockquote>
               ),
