@@ -30,6 +30,8 @@ jobs:
           cache-dependency-path: backend/requirements*.txt
       - run: pip install -r requirements-dev.txt
       - run: ruff check .
+      - name: ruff check ../scripts (helper scripts outside backend/)
+        run: ruff check --config pyproject.toml ../scripts
       - run: pytest
 
   frontend:
