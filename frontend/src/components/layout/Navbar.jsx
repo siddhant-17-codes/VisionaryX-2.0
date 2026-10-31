@@ -1,24 +1,35 @@
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GithubIcon } from "../icons/Icons";
 
 export default function Navbar({ onFeaturesClick }) {
   const navigate = useNavigate();
   const [showDemo, setShowDemo] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const closeRef = useRef(null);
+
+  // The demo guide is a dialog: focus its close button, close on Escape.
+  useEffect(() => {
+    if (!showDemo) return;
+    closeRef.current?.focus();
+    const onKey = (e) => { if (e.key === "Escape") setShowDemo(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showDemo]);
 
   return (
     <>
       <nav className="flex items-center justify-between px-5 md:px-8 py-4 border-b border-border bg-base sticky top-0 z-10">
         {/* Logo */}
-        <div
+        <button
           onClick={() => navigate("/")}
-          className="text-[17px] font-extrabold tracking-tight cursor-pointer flex-shrink-0"
+          aria-label="VisionaryX home"
+          className="text-[17px] font-extrabold tracking-tight cursor-pointer flex-shrink-0 bg-transparent border-none text-linen p-0"
         >
           Visionary<span className="text-primary">X</span>
           <span className="ml-2 bg-primary text-linen text-[9px] font-bold
                            px-2 py-0.5 rounded-full align-middle">2.0</span>
-        </div>
+        </button>
 
         {/* Desktop links */}
         <div className="hidden md:flex items-center gap-6">
@@ -48,6 +59,8 @@ export default function Navbar({ onFeaturesClick }) {
         {/* Mobile hamburger */}
         <button
           onClick={() => setMenuOpen(!menuOpen)}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
           className="md:hidden text-muted hover:text-linen bg-transparent border-none cursor-pointer p-1"
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -91,22 +104,23 @@ export default function Navbar({ onFeaturesClick }) {
           onClick={() => setShowDemo(false)}
         >
           <div
+            role="dialog" aria-modal="true" aria-labelledby="demo-title"
             className="bg-surface border border-border rounded-2xl p-6 w-full max-w-xl max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-base font-bold text-linen">How to use VisionaryX</h2>
+                <h2 id="demo-title" className="text-base font-bold text-linen">How to use VisionaryX</h2>
                 <p className="text-[10px] text-hint mt-0.5">Quick guide to all four features</p>
               </div>
-              <button onClick={() => setShowDemo(false)}
+              <button ref={closeRef} onClick={() => setShowDemo(false)} aria-label="Close guide"
                       className="text-hint hover:text-linen text-lg bg-transparent border-none cursor-pointer">✕</button>
             </div>
             {[
-              { color:"#FE7235", title:"PDF Chat + RAG", steps:["Click PDF Chat in the sidebar","Upload one or more PDF or DOCX files","Wait for indexing — suggested questions appear automatically","Ask anything about your documents","Every answer shows page-level source citations"] },
+              { color:"#FE7235", title:"PDF Chat + RAG", steps:["Click PDF Chat in the sidebar","Upload one or more PDF or DOCX files","Wait for indexing — suggested questions appear automatically","Ask anything about your documents","Every answer cites its sources: the file, and the page or section"] },
               { color:"#FE7235", title:"General Chat", steps:["Click Chat in the sidebar","Type any question and press Send","Conversation memory is maintained across turns","All sessions are saved — click Recent to revisit"] },
               { color:"#0077FF", title:"Image Query", steps:["Click Image Query in the sidebar","Upload any JPG or PNG image","Optionally type a specific question","Click Analyse Image — Gemini Vision responds in detail"] },
-              { color:"#FEA735", title:"Text to Image", steps:["Click Text to Image in the sidebar","Describe what you want to see","Click Generate Image (takes 15–30s)","Download the result when ready"] },
+              { color:"#FEA735", title:"Text to Image", steps:["Click Text to Image in the sidebar","Describe what you want to see","Click Generate Image (usually a few seconds; pauses when the free daily quota is used up)","Download the result when ready"] },
             ].map(({ color, title, steps }) => (
               <div key={title} className="mb-6 last:mb-0">
                 <div className="flex items-center gap-2 mb-3">

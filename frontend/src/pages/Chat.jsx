@@ -16,7 +16,6 @@ export default function Chat() {
           <p className="text-[10px] text-hint mt-0.5">Memory enabled · session auto-saved</p>
         </div>
         <div className="flex gap-2">
-          <span className="badge-blue">Live</span>
           <span className="badge-orange">Gemini 2.5</span>
         </div>
       </div>

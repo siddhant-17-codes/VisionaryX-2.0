@@ -24,15 +24,21 @@ describe("ChatBubble", () => {
     expect(screen.getByText("Page 4")).toBeInTheDocument();
   });
 
-  // U4: fixed in feat/ui-polish-a11y
-  it.fails("keeps inline code inline", () => {
+  it("keeps inline code inline", () => {
     const { container } = render(<ChatBubble role="assistant" content="Run `npm test` now." />);
     expect(container.querySelector("pre")).toBeNull();
   });
 
-  // U4: fixed in feat/ui-polish-a11y
-  it.fails("keeps numbers on ordered lists", () => {
+  it("keeps numbers on ordered lists", () => {
     const { container } = render(<ChatBubble role="assistant" content={"1. First\n2. Second"} />);
-    expect(container.textContent).toContain("1.");
+    // The numbers are native list markers, so check the list type rather than the text.
+    expect(container.querySelector("ol")).toHaveClass("list-decimal");
+    expect(container.querySelectorAll("ol > li")).toHaveLength(2);
+    expect(container.textContent).not.toContain("·");
+  });
+
+  it("still renders fenced code as a block", () => {
+    const { container } = render(<ChatBubble role="assistant" content={"```\nnpm test\n```"} />);
+    expect(container.querySelector("pre > code")).toHaveTextContent("npm test");
   });
 });

@@ -8,6 +8,14 @@ export default function Layout({ children, showSidebar = true }) {
 
   useEffect(() => { wakeServer(); }, []);
 
+  // Escape closes the mobile menu, like any overlay.
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const onKey = (e) => { if (e.key === "Escape") setSidebarOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sidebarOpen]);
+
   if (!showSidebar) return <>{children}</>;
 
   return (
@@ -37,6 +45,8 @@ export default function Layout({ children, showSidebar = true }) {
         <div className="md:hidden flex items-center gap-3 px-4 py-3 border-b border-border bg-base flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={sidebarOpen}
             className="text-muted hover:text-linen transition-colors bg-transparent border-none cursor-pointer p-1"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"

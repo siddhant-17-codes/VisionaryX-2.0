@@ -13,9 +13,9 @@ export default {
         cyan:    "#00C3FF",
         azure:   "#0077FF",
         linen:   "#FCF5EF",
-        muted:   "#4A3D5A",
-        hint:    "#3D3050",
-        dim:     "#2A2040",
+        muted:   "#A495B7",  // 7.0:1 on base and surface (WCAG AA body text)
+        hint:    "#947FB2",  // 5.5:1
+        dim:     "#856FB7",  // 4.6:1, the lowest that still passes AA
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

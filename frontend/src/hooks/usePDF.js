@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { uploadPDFs, queryPDF } from "../api/pdf";
 import { createSession, getSession } from "../api/sessions";
+import { reveal } from "../utils/reveal";
 import { isNotFound, notifyError } from "../utils/notify";
 
 const STORAGE_KEY = "vx_active_pdf_session";
@@ -66,13 +67,8 @@ export function usePDF(restoreSessionId = null) {
     try {
       const history = updated.slice(0, -1);
       const data = await queryPDF(faissSessionRef.current, question, history, chatSessionRef.current);
-      let streamed = "";
-      const words = data.answer.split(" ");
-      for (let i = 0; i < words.length; i++) {
-        streamed += (i === 0 ? "" : " ") + words[i];
-        setMessages([...updated, { role: "assistant", content: streamed, citations: data.citations || [] }]);
-        await new Promise((r) => setTimeout(r, 18));
-      }
+      await reveal(data.answer, (shown) =>
+        setMessages([...updated, { role: "assistant", content: shown, citations: data.citations || [] }]));
     } catch (e) { setError(e); }
     finally { setLoading(false); }
   }, []);

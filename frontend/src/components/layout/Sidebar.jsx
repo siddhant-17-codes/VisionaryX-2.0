@@ -37,17 +37,23 @@ export default function Sidebar({ onClose }) {
     onClose?.();
   };
 
+  const handleDelete = (session) => {
+    if (window.confirm(`Delete "${session.title}"? This can't be undone.`)) removeSession(session.id);
+  };
+
   return (
     <aside className="w-[210px] bg-base border-r border-border flex flex-col h-full flex-shrink-0">
 
       {/* Brand */}
       <div className="px-4 py-4 border-b border-border">
-        <div
-          className="text-[13px] font-extrabold text-linen tracking-tight cursor-pointer hover:text-primary transition-colors"
+        <button
+          className="text-[13px] font-extrabold text-linen tracking-tight cursor-pointer hover:text-primary transition-colors
+                     bg-transparent border-none p-0"
           onClick={() => { navigate("/"); onClose?.(); }}
+          aria-label="VisionaryX home"
         >
           Visionary<span className="text-primary">X</span>
-        </div>
+        </button>
         <div className="text-[9px] text-hint mt-0.5">AI workspace 2.0</div>
         <button
           onClick={handleNewChat}
@@ -76,7 +82,7 @@ export default function Sidebar({ onClose }) {
           >
             {({ isActive }) => (
               <>
-                <Icon size={14} color={isActive ? "#FE7235" : "#4A3D5A"} />
+                <Icon size={14} color={isActive ? "#FE7235" : "#A495B7"} />
                 <span className="flex-1">{label}</span>
                 <span
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -95,11 +101,11 @@ export default function Sidebar({ onClose }) {
             Recent
           </div>
           {sessions.slice(0, 12).map((s) => (
+            // A real button per session (keyboard-reachable). Delete is always shown on
+            // touch screens, appears on hover or focus elsewhere, and asks first.
             <div
               key={s.id}
-              onClick={() => handleSessionClick(s)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                         cursor-pointer hover:bg-surface group transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-surface group transition-colors"
             >
               <span
                 className="w-1.5 h-1.5 rounded-full flex-shrink-0"
@@ -110,10 +116,17 @@ export default function Sidebar({ onClose }) {
                     : "#FEA735"
                 }}
               />
-              <span className="text-[11px] text-muted truncate flex-1">{s.title}</span>
               <button
-                onClick={(e) => { e.stopPropagation(); removeSession(s.id); }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:text-red-400 btn-icon"
+                onClick={() => handleSessionClick(s)}
+                className="text-[11px] text-muted truncate flex-1 text-left bg-transparent border-none p-0 cursor-pointer"
+              >
+                {s.title}
+              </button>
+              <button
+                onClick={() => handleDelete(s)}
+                aria-label={`Delete conversation: ${s.title}`}
+                className="md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity
+                           p-0.5 rounded hover:text-red-400 btn-icon"
               >
                 <TrashIcon size={11} />
               </button>
