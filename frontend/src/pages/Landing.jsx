@@ -9,13 +9,13 @@ const features = [
     Icon: PDFIcon, iconBg: "#1E1008", iconBorder: "#3A2010", iconColor: "#FE7235",
     badge: "Hero feature", badgeClass: "badge-amber",
     title: "PDF Chat + RAG", route: "/workspace/pdf",
-    desc: "Upload PDF or DOCX. Adaptive relevance threshold. Every answer includes inline page-level citations.",
+    desc: "Upload PDF or DOCX. Adaptive relevance threshold. Every answer cites the file and page it came from.",
     tech: "FAISS · LangChain · Gemini",
   },
   {
     Icon: ChatIcon, iconBg: "#1E1008", iconBorder: "#3A2010", iconColor: "#FE7235",
     title: "General Chat", route: "/workspace/chat",
-    desc: "Full conversation memory per turn. Sessions saved to disk. Start fresh anytime.",
+    desc: "Full conversation memory per turn. Conversations are saved for this browser. Start fresh anytime.",
     tech: "Gemini 2.5 Flash",
   },
   {
@@ -27,7 +27,7 @@ const features = [
   {
     Icon: SparkleIcon, iconBg: "#120A04", iconBorder: "#2A1800", iconColor: "#FEA735",
     title: "Text to Image", route: "/workspace/generate",
-    desc: "Describe what you want. FLUX.1-schnell generates a downloadable high-quality image.",
+    desc: "Describe what you want. FLUX.1 [schnell] generates a downloadable image. Free daily quota; pauses when it is used up.",
     tech: "FLUX · Cloudflare Workers AI",
   },
 ];
