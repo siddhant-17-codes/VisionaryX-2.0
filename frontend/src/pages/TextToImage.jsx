@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getImageStatus } from "../api/image";
 import { useImageGenerate } from "../hooks/useImage";
 import { SparkleIcon, DownloadIcon } from "../components/icons/Icons";
 import toast from "react-hot-toast";
@@ -6,8 +7,26 @@ import toast from "react-hot-toast";
 export default function TextToImage() {
   const [prompt, setPrompt] = useState("");
   const { imageB64, loading, error, generate } = useImageGenerate();
+  const [pausedUntil, setPausedUntil] = useState(null);
 
-  useEffect(() => { if (error) toast.error(error); }, [error]);
+  // Say "paused" before anyone types. If this check fails, the generate call
+  // itself reports the problem, so it stays quiet here.
+  useEffect(() => {
+    getImageStatus()
+      .then((s) => { if (!s.available && s.resumes_at) setPausedUntil(new Date(s.resumes_at)); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!error) return;
+    if (error.type === "ImageQuotaExceededError") {
+      setPausedUntil(new Date(Date.now() + (error.retryAfter || 3600) * 1000));
+    } else {
+      toast.error(error.message);
+    }
+  }, [error]);
+
+  const paused = pausedUntil && pausedUntil > new Date();
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-10">
@@ -27,6 +46,16 @@ export default function TextToImage() {
           </div>
         )}
       </div>
+      {paused && (
+        <div role="status" className="mb-3 rounded-xl border px-4 py-3"
+             style={{ background: "#1A0A04", borderColor: "#3A1808" }}>
+          <p className="text-sm font-semibold" style={{ color: "#FEA735" }}>Image generation is paused</p>
+          <p className="text-xs text-muted leading-relaxed">
+            The free image quota is used up for now. It should be back around{" "}
+            {pausedUntil.toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}.
+          </p>
+        </div>
+      )}
       <textarea
         className="textarea-field mb-3"
         rows={3}
@@ -36,10 +65,10 @@ export default function TextToImage() {
       />
       <button
         onClick={() => prompt.trim() && generate(prompt)}
-        disabled={loading || !prompt.trim()}
+        disabled={loading || paused || !prompt.trim()}
         className="btn-primary w-full mb-3"
       >
-        {loading ? "Generating… (15–30s)" : "Generate Image"}
+        {loading ? "Generating… (usually a few seconds)" : paused ? "Paused" : "Generate Image"}
       </button>
       {imageB64 && (
         <a

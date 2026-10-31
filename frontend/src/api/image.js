@@ -9,3 +9,7 @@ export const queryImage = (file, prompt = "") => {
 
 export const generateImage = (prompt) =>
   client.post("/api/generate/image", { prompt }).then((r) => r.data.image_base64);
+
+// { available, resumes_at }: image generation is paused when every free quota is used up.
+export const getImageStatus = () =>
+  client.get("/api/generate/status").then((r) => r.data);

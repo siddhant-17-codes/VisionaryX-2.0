@@ -28,7 +28,7 @@ const features = [
     Icon: SparkleIcon, iconBg: "#120A04", iconBorder: "#2A1800", iconColor: "#FEA735",
     title: "Text to Image", route: "/workspace/generate",
     desc: "Describe what you want. FLUX.1-schnell generates a downloadable high-quality image.",
-    tech: "FLUX · HuggingFace",
+    tech: "FLUX · Cloudflare Workers AI",
   },
 ];
 

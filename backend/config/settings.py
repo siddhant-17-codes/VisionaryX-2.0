@@ -6,6 +6,9 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     google_api_key: str
     huggingfacehub_api_token: str
+    # Cloudflare Workers AI, the first image provider. Unset = Hugging Face only.
+    cloudflare_account_id: str = ""
+    cloudflare_api_token: str = ""
     allowed_origins: str = "http://localhost:5173"
     supabase_url: str = ""
     supabase_service_key: str = ""

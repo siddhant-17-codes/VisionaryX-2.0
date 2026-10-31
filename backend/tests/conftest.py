@@ -11,6 +11,14 @@ import pytest
 
 for _key in ("GOOGLE_API_KEY", "HUGGINGFACEHUB_API_TOKEN", "SUPABASE_URL", "SUPABASE_SERVICE_KEY"):
     os.environ[_key] = "test-dummy"
+# Never use real keys from backend/.env: a setting missing above would otherwise be
+# read from it and reach the real service (this once sent test images to Cloudflare).
+for _key in ("CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"):
+    os.environ[_key] = ""
+
+from config.settings import Settings  # noqa: E402
+
+Settings.model_config["env_file"] = None
 
 from fastapi.testclient import TestClient  # noqa: E402
 from langchain_core.embeddings import DeterministicFakeEmbedding  # noqa: E402
@@ -192,6 +200,16 @@ def reset_rate_limits():
     from core.rate_limit import ALL_LIMITERS
     for limiter in ALL_LIMITERS:
         limiter.reset()
+
+
+@pytest.fixture(autouse=True)
+def reset_image_pause(monkeypatch):
+    import services.image_service
+    monkeypatch.setattr(services.image_service, "_paused_until", None)
+
+    def no_real_cloudflare(*_args, **_kwargs):
+        raise AssertionError("A test tried to call the real Cloudflare API; use the cloudflare fixture.")
+    monkeypatch.setattr(services.image_service.httpx, "post", no_real_cloudflare)
 
 
 @pytest.fixture(autouse=True)
