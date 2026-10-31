@@ -70,7 +70,7 @@ export function useImageGenerate() {
       const b64 = await generateImage(prompt);
       setImageB64(b64);
       setHistory((h) => [...h, { prompt, hasImage: true }]);
-    } catch (e) { setError(e.message); }
+    } catch (e) { setError(e); }
     finally { setLoading(false); }
   };
 

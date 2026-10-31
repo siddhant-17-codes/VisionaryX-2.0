@@ -59,6 +59,9 @@ class RateLimiter:
 gemini_limit = RateLimiter("gemini", limit=20)
 upload_limit = RateLimiter("upload", limit=5)
 generate_limit = RateLimiter("generate", limit=10)
+# The free image allowance is shared by every visitor (about 170 images a day on
+# Cloudflare), so one visitor gets at most 20 a day.
+generate_daily_limit = RateLimiter("generate-daily", limit=20, window=24 * 60 * 60)
 sessions_limit = RateLimiter("sessions", limit=60)
 
-ALL_LIMITERS = (gemini_limit, upload_limit, generate_limit, sessions_limit)
+ALL_LIMITERS = (gemini_limit, upload_limit, generate_limit, generate_daily_limit, sessions_limit)

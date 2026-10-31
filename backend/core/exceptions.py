@@ -83,12 +83,14 @@ class ImageGenerationError(VisionaryXError):
 
 
 class ImageQuotaExceededError(VisionaryXError):
-    """Raised when the HuggingFace inference credits are used up (HTTP 402)."""
-    def __init__(self):
+    """Raised when every image provider's free quota is used up. retry_after is the
+    number of seconds until it is expected back (sent as Retry-After)."""
+    def __init__(self, retry_after: int):
         super().__init__(
-            "Image generation is temporarily unavailable (monthly free quota used up). Try again later.",
+            "Image generation is paused: the free image quota is used up for now. Please try again later.",
             status_code=503,
         )
+        self.retry_after = retry_after
 
 
 class UnsupportedFileTypeError(VisionaryXError):
