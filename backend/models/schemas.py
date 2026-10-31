@@ -29,6 +29,7 @@ History = Annotated[list[ChatMessage], AfterValidator(_keep_recent)]
 
 class ChatResponse(BaseModel):
     reply: str
+    model: str | None = None  # the Gemini model that answered (after any fallback)
 
 
 class Citation(BaseModel):
@@ -42,10 +43,12 @@ class Citation(BaseModel):
 class PDFQueryResponse(BaseModel):
     answer: str
     citations: list[Citation]
+    model: str | None = None
 
 
 class ImageQueryResponse(BaseModel):
     answer: str
+    model: str | None = None
 
 
 class GenerateImageRequest(BaseModel):

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import httpx
 from google.genai import errors as genai_errors
 from google.genai import types
@@ -29,6 +31,9 @@ class _Model:
 
 
 _chain = [(name, _Model(name)) for name in settings.gemini_model_list]
+# Suggested questions are a nice-to-have, so they use lite models only and never spend
+# the main model's small daily quota.
+_suggest_chain = [(name, _Model(name)) for name in settings.gemini_suggest_model_list]
 
 # HTTP statuses worth trying the next model for: out of quota, retired, overloaded.
 _FALLBACK_CODES = {429, 404, 500, 503, 504}
@@ -66,10 +71,16 @@ def classify_google_error(exc: BaseException) -> VisionaryXError | None:
     return None
 
 
-def _generate(contents, system: str | None = None) -> str:
+@dataclass(frozen=True)
+class Generated:
+    text: str
+    model: str  # the model in the chain that actually answered, shown in the UI
+
+
+def _generate(contents, system: str | None = None, chain=None) -> Generated:
     config = types.GenerateContentConfig(system_instruction=system) if system else None
     last_error: Exception | None = None
-    for name, model in _chain:
+    for name, model in chain or _chain:
         try:
             response = model.generate_content(contents, config=config)
         except Exception as e:
@@ -81,7 +92,7 @@ def _generate(contents, system: str | None = None) -> str:
         if not response.text:
             # Blocked by safety filters or no candidates: retrying another model won't help.
             raise LLMError(f"{name} returned no text")
-        return response.text
+        return Generated(response.text, name)
     raise last_error or LLMUnavailableError()
 
 
@@ -102,7 +113,7 @@ def _user(text: str) -> types.Content:
     return types.Content(role="user", parts=[types.Part(text=text)])
 
 
-def chat(message: str, history: list[ChatMessage]) -> str:
+def chat(message: str, history: list[ChatMessage]) -> Generated:
     try:
         logger.debug(f"Chat request | history_length={len(history)}")
         reply = _generate([*_turns(history), _user(message)])
@@ -113,7 +124,7 @@ def chat(message: str, history: list[ChatMessage]) -> str:
         raise _as_llm_error(e) from e
 
 
-def query_with_context(question: str, context: str, history: list[ChatMessage]) -> str:
+def query_with_context(question: str, context: str, history: list[ChatMessage]) -> Generated:
     try:
         logger.debug(f"RAG query | context_length={len(context)} | history={len(history)}")
         turn = _user(f"Context:\n{context}\n\nQuestion: {question}")
@@ -135,7 +146,7 @@ Document content:
 {document_summary[:3000]}
 
 3 questions:"""
-        text = _generate(prompt)
+        text = _generate(prompt, chain=_suggest_chain).text
         lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
         questions = lines[:3]
         logger.info(f"Generated {len(questions)} suggested questions")
@@ -145,7 +156,7 @@ Document content:
         return []
 
 
-def analyze_image(image_bytes: bytes, prompt: str) -> str:
+def analyze_image(image_bytes: bytes, prompt: str) -> Generated:
     import io
 
     import PIL.Image

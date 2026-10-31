@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import CitationCard from "../pdf/CitationCard";
 
-export default function ChatBubble({ role, content, citations = [] }) {
+export default function ChatBubble({ role, content, citations = [], model = null }) {
   const isUser = role === "user";
   return (
     <div className={`flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
@@ -50,6 +50,8 @@ export default function ChatBubble({ role, content, citations = [] }) {
           </ReactMarkdown>
         </div>
       )}
+      {/* Which model answered (the chain may have fallen back to a lite model). */}
+      {!isUser && model && <span className="text-[9px] text-hint -mt-1 px-1">Answered by {model}</span>}
       {citations.length > 0 && (
         <div className="w-full max-w-[88%]">
           <div className="flex items-center gap-2 mb-2">

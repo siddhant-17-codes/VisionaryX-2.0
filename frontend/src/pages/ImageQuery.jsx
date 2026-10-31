@@ -8,7 +8,7 @@ export default function ImageQuery() {
   const [file, setFile]     = useState(null);
   const [preview, setPreview] = useState(null);
   const [prompt, setPrompt] = useState("");
-  const { answer, loading, error, analyse } = useImageQuery();
+  const { answer, model, loading, error, analyse } = useImageQuery();
 
   useEffect(() => { if (error) toast.error(error); }, [error]);
 
@@ -37,7 +37,7 @@ export default function ImageQuery() {
       >
         {loading ? "Analysing…" : "Analyse Image"}
       </button>
-      <ImageResult answer={answer} />
+      <ImageResult answer={answer} model={model} />
     </div>
   );
 }

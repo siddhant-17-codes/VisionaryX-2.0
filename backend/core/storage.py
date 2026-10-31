@@ -93,9 +93,10 @@ def list_sessions(owner_id: str) -> list[dict]:
 # The two writers below take the session the route already loaded for its ownership
 # check, so a turn costs one read and one write instead of two reads and a write.
 
-def append_turn(session: ChatSession, question: str, answer: str) -> ChatSession:
+def append_turn(session: ChatSession, question: str, answer: str, model: str | None = None) -> ChatSession:
     session.messages.append({"role": "user", "content": question})
-    session.messages.append({"role": "assistant", "content": answer})
+    # The model is kept with the answer so a restored conversation still shows it.
+    session.messages.append({"role": "assistant", "content": answer, **({"model": model} if model else {})})
     session.updated_at = _now()
     if len(session.messages) == 2 and session.title == "New chat":
         first = next((m["content"] for m in session.messages if m["role"] == "user"), "")

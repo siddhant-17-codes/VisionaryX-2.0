@@ -96,6 +96,6 @@ def query_documents(
 
     logger.info(f"Answering with {len(context_parts)} chunks | {len(citations)} citations")
     context = "\n\n---\n\n".join(context_parts)
-    answer = query_with_context(question, context, history)
+    generated = query_with_context(question, context, history)
 
-    return PDFQueryResponse(answer=answer, citations=citations)
+    return PDFQueryResponse(answer=generated.text, citations=citations, model=generated.model)

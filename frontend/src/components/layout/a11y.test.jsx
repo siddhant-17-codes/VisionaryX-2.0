@@ -27,6 +27,11 @@ describe("Sidebar", () => {
     expect(screen.getByRole("button", { name: "Orchard report" })).toBeInTheDocument();
   });
 
+  it("says that history is kept per browser", () => {
+    inRouter(<Sidebar />);
+    expect(screen.getByText("Your history is saved in this browser only.")).toBeInTheDocument();
+  });
+
   it("labels delete and asks before deleting", async () => {
     inRouter(<Sidebar />);
     const del = screen.getByRole("button", { name: "Delete conversation: Orchard report" });

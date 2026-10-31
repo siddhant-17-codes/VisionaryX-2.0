@@ -14,5 +14,5 @@ def query_image(
     prompt: str = Form(default="Describe this image in detail.", min_length=1, max_length=1000),
 ):
     image_bytes = read_capped(file, MAX_IMAGE_BYTES)
-    answer = analyze_image(image_bytes, prompt)
-    return ImageQueryResponse(answer=answer)
+    generated = analyze_image(image_bytes, prompt)
+    return ImageQueryResponse(answer=generated.text, model=generated.model)

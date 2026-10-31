@@ -1,72 +1,41 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { queryImage, generateImage } from "../api/image";
-import { createSession, getSession } from "../api/sessions";
 import { reveal } from "../utils/reveal";
-import { notifyError } from "../utils/notify";
 
-const QUERY_KEY = "vx_image_query_session";
-const GEN_KEY   = "vx_image_gen_session";
+// Image Query and Text to Image keep nothing on the server, so they create no
+// session: visiting them used to leave an empty "New chat" in the history (F5).
 
 export function useImageQuery() {
   const [answer, setAnswer]   = useState("");
-  const [history, setHistory] = useState([]);
+  const [model, setModel]     = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
-  const [, setSessionId] = useState(null);
-
-  useEffect(() => {
-    const existing = localStorage.getItem(QUERY_KEY);
-    if (existing) {
-      getSession(existing)
-        .then((s) => { setSessionId(s.id); setHistory(s.messages || []); })
-        .catch(() => init());
-    } else { init(); }
-    async function init() {
-      try { const s = await createSession("image"); setSessionId(s.id); localStorage.setItem(QUERY_KEY, s.id); } catch (e) { notifyError(e, "Couldn't connect to the server.", "session-create"); }
-    }
-  }, []);
 
   const analyse = async (file, prompt) => {
-    setLoading(true); setError(null);
+    setLoading(true); setError(null); setModel(null);
     try {
       const result = await queryImage(file, prompt);
-      await reveal(result, setAnswer);
-      setHistory((h) => [...h, { role: "user", content: prompt || "Analyse image" }, { role: "assistant", content: result }]);
+      await reveal(result.answer, setAnswer);
+      setModel(result.model || null);
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
   };
 
-  return { answer, history, loading, error, analyse, reset: () => { setAnswer(""); } };
+  return { answer, model, loading, error, analyse, reset: () => { setAnswer(""); setModel(null); } };
 }
 
 export function useImageGenerate() {
   const [imageB64, setImageB64] = useState(null);
-  const [history, setHistory]   = useState([]);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
-  const [, setSessionId] = useState(null);
-
-  useEffect(() => {
-    const existing = localStorage.getItem(GEN_KEY);
-    if (existing) {
-      getSession(existing)
-        .then((s) => { setSessionId(s.id); setHistory(s.messages || []); })
-        .catch(() => init());
-    } else { init(); }
-    async function init() {
-      try { const s = await createSession("generate"); setSessionId(s.id); localStorage.setItem(GEN_KEY, s.id); } catch (e) { notifyError(e, "Couldn't connect to the server.", "session-create"); }
-    }
-  }, []);
 
   const generate = async (prompt) => {
     setLoading(true); setError(null);
     try {
-      const b64 = await generateImage(prompt);
-      setImageB64(b64);
-      setHistory((h) => [...h, { prompt, hasImage: true }]);
+      setImageB64(await generateImage(prompt));
     } catch (e) { setError(e); }
     finally { setLoading(false); }
   };
 
-  return { imageB64, history, loading, error, generate, reset: () => setImageB64(null) };
+  return { imageB64, loading, error, generate, reset: () => setImageB64(null) };
 }
