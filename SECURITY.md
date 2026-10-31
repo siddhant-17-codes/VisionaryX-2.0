@@ -16,7 +16,7 @@ is the right place for that.
 
 ## Supported versions
 
-Only the latest code on `main` (currently release 2.0.0) receives fixes.
+Only the latest code on `main` (currently release 2.0.1) receives fixes.
 
 ## Secret handling
 
