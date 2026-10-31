@@ -154,7 +154,7 @@ flowchart TB
 
     GH --> CI
     GH -->|"auto-deploys main"| V
-    GH -->|"deployed by hand from the dashboard"| R
+    GH -->|"auto-deploys main"| R
     KA -->|"GET /health/db"| R
     R --> S
 ```

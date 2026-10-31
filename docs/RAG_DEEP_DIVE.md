@@ -112,20 +112,19 @@ because that location becomes the citation.
 ### PDF: page by page
 
 `extract_chunks_from_pdf` reads the file with `pypdf` and processes each page separately,
-numbering pages from 1. For each page, `_safe_extract_text` tries four strategies in order
-and keeps the first that returns non-blank text:
+numbering pages from 1. For each page, `_safe_extract_text` tries three strategies in
+order and keeps the first that returns non-blank text:
 
 1. `page.extract_text()`: pypdf's standard extraction.
 2. `page.extract_text(extraction_mode="layout")`: layout mode, which can recover text that
    the standard mode loses in unusual layouts.
-3. A pass over `page._objects`, calling `get_text()` on each. pypdf's page objects do not
-   have an `_objects` attribute, so this strategy never applies with the pinned pypdf
-   (4.1.0); it is a leftover from an earlier version of the code.
-4. `page.extract_text(visitor_text=...)`: a callback receives each text fragment, which is
+3. `page.extract_text(visitor_text=...)`: a callback receives each text fragment, which is
    re-encoded as UTF-8 with undecodable characters dropped.
 
 Each strategy is wrapped in `try`/`except`, so a page that breaks one strategy falls
-through to the next. A page where all four return nothing is skipped.
+through to the next. A page where all three return nothing is skipped. (Up to 2.0.0 there
+was a fourth strategy that read `page._objects`; pypdf pages have no such attribute, so it
+never ran, and 2.0.1 removed it. `backend/tests/test_pdf_extraction.py` pins the order.)
 
 **Encoding and cleaning** (`_clean_text`): characters that cannot be encoded as UTF-8
 (such as lone surrogates) are dropped, null bytes become spaces, runs of spaces and tabs
@@ -396,10 +395,20 @@ An index is saved to the `faiss_indexes` table by `save_faiss_index`
 }
 ```
 
-The whole JSON is then base64-encoded once more into the `index_b64` text column. Each
-3,072-dimension vector is 12,288 bytes as float32, so the two base64 layers store it in
-about 21,800 characters; that is fine at this scale and the price of keeping the existing
-text column (see [Limitations](#10-limitations-and-what-production-systems-add)).
+Since 2.0.1 this JSON is stored as it is, as text, in the `index_b64` column (the column
+kept its old name, so no migration was needed). Each 3,072-dimension vector is 12,288 bytes
+as float32 and about 16,400 characters once base64-encoded inside the JSON.
+`load_faiss_index` reads every format that has ever been stored:
+
+| Stored value | Written by | How it is read |
+|---|---|---|
+| The JSON as text | 2.0.1 onwards | as is |
+| Base64 of the JSON | 2.0.0 | decoded, then the JSON |
+| Base64 of a legacy pickle | before 2.0.0 | decoded, then the data-only reader below |
+
+Base64 never contains `{`, so a value that starts with `{` is always the plain JSON. In
+production, a 2.0.0-format index and a new one both loaded after the change (checked on
+2026-10-31). `backend/tests/test_index_storage.py` covers all three formats.
 
 ### Why pickle was dangerous, and how old indexes still load
 
@@ -519,8 +528,8 @@ What VisionaryX does not do, and what larger systems typically add:
   would show the first words while the model is still writing.
 - **Large-scale ANN indexes.** With one large shared collection instead of small per-chat
   indexes, an approximate index (IVF, HNSW) or a vector database would replace the flat
-  index, and storing vectors in a binary or `pgvector` column would avoid the double
-  base64 encoding described in [section 8](#the-json-faiss-codec).
+  index, and storing vectors in a binary or `pgvector` column would avoid the base64
+  encoding inside the JSON described in [section 8](#the-json-faiss-codec).
 - **Smarter chunking.** Splitting by characters ignores meaning. Alternatives split by
   tokens, by document structure (headings in PDFs too), or by detected topic shifts, and
   some attach a summary of the surrounding section to each chunk.

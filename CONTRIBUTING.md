@@ -48,13 +48,49 @@ A test that reaches a real service is a bug.
 - **CI must be green** before a merge. `.github/workflows/ci.yml` runs on every push and
   pull request: *Backend (ruff + pytest)* and *Frontend (eslint + vitest + build)*.
   Branches are merged into `main` with a merge commit.
-- **Dependencies:** edit `backend/requirements.in`, then regenerate the lock with
-  `make -C backend lock` (needs `uv`); frontend dependencies go through `npm`. Dependabot
-  opens weekly update pull requests, which the maintainer reviews by hand.
+- **Dependencies:** see [Dependency policy](#dependency-policy) below.
 - **Never commit** `.env` files, keys, or personal files; `.gitignore` covers the usual
   ones.
 
+## Dependency policy
+
+- **Backend:** direct dependencies are pinned in `backend/requirements.in`; the full tree is
+  locked in `backend/requirements.txt` with `make -C backend lock`
+  (`uv pip compile requirements.in --universal --python-version 3.12`). The `--universal`
+  flag keeps platform markers, such as `uvloop` only off Windows and `colorama` only on it,
+  so the same lock installs on Linux (CI, Render) and Windows.
+- **Frontend:** `frontend/package.json` and `package-lock.json`, through `npm`.
+- **Dependabot** (`.github/dependabot.yml`) opens one grouped pull request a week per
+  ecosystem (pip, npm, GitHub Actions) for minor and patch updates, and ignores
+  semver-major updates. FastAPI is kept out of the pip group: it is 0.x, so its "minor"
+  releases can break, and recent ones require Starlette 1.x.
+- **Dependabot's pip lock files need regenerating.** Its pip pull requests rewrite
+  `requirements.txt` without uv's `--universal` markers (seen in October 2026: `uvloop`
+  became unconditional, which cannot install on Windows, and `colorama` was dropped).
+  Apply the versions with `make -C backend lock` in a normal branch instead, run the tests,
+  and close the Dependabot pull request as superseded.
+- **Every update** must pass CI; backend updates also run the FAISS codec and index storage
+  tests (`tests/test_faiss_codec.py`, `tests/test_index_storage.py`), and after a backend
+  merge Render's `/health` and `/health/db` are checked.
+- **Accepted risk:** `npm audit` reports moderate advisories in ESLint's dependencies
+  (dev-only lint tooling, never shipped to the browser). The only fix npm offers is a
+  downgrade to ESLint 4, so they are accepted.
+
+### Planned major upgrades
+
+Major versions are upgraded deliberately, one at a time, each on its own branch with a
+migration and tests. Open as of 2026-10-31:
+
+| Package | Current → available | Why it matters | Risk |
+|---|---|---|---|
+| FastAPI (with Starlette) | 0.115.6 → 0.162.0 (Starlette 0.41.3 → 1.10.0) | Stay on supported releases and receive fixes | Starlette 1.0 removes deprecated APIs; the app's middleware, error handlers and `TestClient` use need checking |
+| pypdf | 4.3.1 → 6.x | Newer releases fix many parsing problems with malformed PDFs | Two majors of API changes; all three extraction strategies (standard, layout, visitor) and the scanned-PDF refusal need re-testing on real files |
+| React + react-dom | 18.3.1 → 19.x | Current React; the ecosystem is moving to it | Changes to refs and rendering; react-markdown, react-router and Testing Library must be checked together |
+| react-markdown | 9.1.0 → 10.x | Keep the markdown renderer current | Breaking API changes in 10.0 (check the changelog); answers' code blocks and numbered lists are pinned by `ChatBubble.test.jsx` |
+| Vite | 6.4.5 → 8.x | Faster builds; Vite 6 will leave support | Newer Node requirement; `@vitejs/plugin-react` and Vitest must move with it |
+
 ## Deploys
 
-`main` deploys the frontend to Vercel automatically. The backend on Render is deployed by
-hand, so a backend change is not live until the maintainer deploys it.
+`main` deploys the frontend to Vercel and the backend to Render automatically, on every
+merge. After a merge that touches `backend/`, check that `/health` and `/health/db` return
+200 before merging anything else.
