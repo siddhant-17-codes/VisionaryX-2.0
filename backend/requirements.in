@@ -1,6 +1,6 @@
 # Direct dependencies. Edit this file, then regenerate the lock:
 #   uv pip compile requirements.in --universal --python-version 3.12 -o requirements.txt
-fastapi==0.115.6
+fastapi==0.162.4
 uvicorn[standard]==0.54.0
 python-multipart==0.0.32
 
